@@ -26,8 +26,10 @@ create table if not exists public.catalog_items(
 alter table public.catalog_items enable row level security;
 grant select on public.catalog_items to anon,authenticated;
 grant insert,update,delete on public.catalog_items to authenticated;
-create policy "public can read visible catalog" on public.catalog_items
- for select to anon,authenticated using (
+create policy "public read visible" on public.catalog_items
+ for select to anon using (enabled);
+create policy "authenticated read visible or owned admin" on public.catalog_items
+ for select to authenticated using (
   enabled or exists(select 1 from public.admin_users a where a.user_id = (select auth.uid()))
  );
 create policy "admin insert" on public.catalog_items for insert to authenticated
@@ -60,3 +62,6 @@ on conflict (id) do nothing;
 -- insert into public.admin_users(user_id)
 -- select id from auth.users where lower(email)=lower('TU_CORREO');
 -- El registro público en Supabase Auth debe estar DESACTIVADO.
+
+-- Notificaciones Realtime (el frontend también consulta cada 15 segundos como respaldo).
+alter publication supabase_realtime add table public.catalog_items;
