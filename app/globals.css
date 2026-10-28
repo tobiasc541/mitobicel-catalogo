@@ -325,3 +325,18 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 @media(prefers-reduced-motion:reduce){
  .weekly-promo-badge,.offer-section .offer-order:after{animation:none}
 }
+
+/* SVG symbols prevent iOS/Safari from replacing the player and brand icons with colored emoji glyphs. */
+.vsl-play-circle{color:#fff}
+.vsl-play-circle svg{display:block;width:34px;height:34px;fill:#fff;flex:none;filter:none}
+.vsl-audio{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.vsl-audio svg{width:12px;height:12px;flex:none}
+.weekly-promo-badge svg,.offer-tag svg{display:inline-block;width:14px;height:14px;vertical-align:middle;flex:none}
+.offer-tag{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.offer-product-placeholder{display:grid;place-items:center}
+.offer-product-placeholder svg{width:35px;height:35px;stroke:currentColor}
+.factory-location strong{display:inline-flex;align-items:center;gap:6px}
+.factory-location strong svg{height:15px;width:15px;flex:none;stroke:#08964b}
+.factory-map{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.factory-map svg{height:15px;width:15px;flex:none}
+@media(max-width:650px){.vsl-play-circle svg{width:26px;height:26px}}

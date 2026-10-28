@@ -210,12 +210,12 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
   <section className="vsl-section wrap" id="fabrica">
    <div className="vsl-intro"><span className="overline">RECORRIDO POR NUESTRA PLANTA EN BURZACO</span><h2>{settings.video_title==='Calidad que podés ver en vivo antes de hacer tu pedido'?<>Calidad que podés ver <em>en vivo antes de hacer tu pedido.</em></>:settings.video_title}</h2><p>{settings.video_caption}</p></div>
    <div className="vsl-shell">
-    <div className="vsl-topline"><span className="vsl-source"><span className="vsl-dot"/> PLANTA BURZACO · EXTRUSIÓN PROPIA</span><span className="vsl-audio">♫ AUDIO DISPONIBLE</span></div>
+    <div className="vsl-topline"><span className="vsl-source"><span className="vsl-dot"/> PLANTA BURZACO · EXTRUSIÓN PROPIA</span><span className="vsl-audio"><Icon name="music"/> AUDIO DISPONIBLE</span></div>
     <div className="vsl-screen">
       {video ? (!videoStarted ?
-        <button type="button" className="vsl-play" onClick={()=>setVideoStarted(true)} style={poster?{backgroundImage:'linear-gradient(#00190b55,#00190b55),url("'+poster+'")'}:{}} aria-label="Reproducir video de fábrica"><span className="vsl-play-circle">▶</span><strong>Reproducir video de la fábrica</strong></button>
+        <button type="button" className="vsl-play" onClick={()=>setVideoStarted(true)} style={poster?{backgroundImage:'linear-gradient(#00190b55,#00190b55),url("'+poster+'")'}:{}} aria-label="Reproducir video de fábrica"><span className="vsl-play-circle"><Icon name="play"/></span><strong>Reproducir video de la fábrica</strong></button>
         :video.type==='mp4'?<video src={video.src} poster={poster||undefined} controls playsInline autoPlay preload="metadata"/>:<iframe title="Recorrido por MITOBICEL" src={video.src+(video.src.includes('?')?'&':'?')+'autoplay=1'} allow="accelerometer; autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
-      ):<div className="vsl-empty"><span className="vsl-play-circle">▶</span><strong>Próximamente: recorrido por la planta</strong><small>En el superadmin se podrá publicar el video completo.</small></div>}
+      ):<div className="vsl-empty"><span className="vsl-play-circle"><Icon name="play"/></span><strong>Próximamente: recorrido por la planta</strong><small>En el superadmin se podrá publicar el video completo.</small></div>}
     </div>
    </div>
    <div className="vsl-chapters" role="tablist" aria-label="Etapas de la fábrica">{chapters.map((c,i)=><button key={i} type="button" className={'vsl-chapter'+(chapter===i?' selected':'')} role="tab" aria-selected={chapter===i} onClick={()=>setChapter(i)}><span>{String(i+1).padStart(2,'0')}</span><strong>{c.title}</strong></button>)}</div><div className="vsl-chapter-detail" role="tabpanel"><span className="chapter-kicker">ETAPA {String(chapter+1).padStart(2,'0')}</span><p>{chapters[chapter].detail}</p></div>
@@ -223,7 +223,7 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
   <SocialProof placement="video"/>
   <DirectComparison/>
   {offerReady&&offers.some(o=>o.active)&&<section className="wrap offer-section" id="promociones">
-   <div className="section-top"><div><span className="weekly-promo-badge">🔥 PROMOCIONES SEMANALES · DIRECTO DE FÁBRICA</span><h2>Ofertas que <em>rinden más.</em></h2><p>Elegí las presentaciones y consultá las condiciones vigentes de la promoción.</p></div></div>
+   <div className="section-top"><div><span className="weekly-promo-badge"><Icon name="flame"/> PROMOCIONES SEMANALES · DIRECTO DE FÁBRICA</span><h2>Ofertas que <em>rinden más.</em></h2><p>Elegí las presentaciones y consultá las condiciones vigentes de la promoción.</p></div></div>
    <div className="offers-grid">{offers.filter(o=>o.active).map(o=>{
     const total=comboTotal(o,'pickup'),delivery=comboTotal(o,'delivery'),before=price(o.price_old,o);
     const showOld=before!==null&&total!==null&&before>total;
@@ -231,14 +231,14 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
     const detailPrices=hasSeparatePrices(o)?' Producto A: retiro '+money(o.price_a_pickup??null)+' / envío '+money(o.price_a_delivery??null)+' por '+o.unit_a+'. Producto B: retiro '+money(o.price_b_pickup??null)+' / envío '+money(o.price_b_delivery??null)+' por '+o.unit_b+'.':'';
     const waText='Hola MITOBICEL, quiero pedir la promoción '+o.title+': '+detail(o)+'.'+detailPrices+' Total retiro: '+money(total)+'. Total con envío: '+money(delivery)+'. ¿Me confirman disponibilidad?';
     return <article className="offer-card" key={o.id}>
-      <div className="offer-sheen"/><span className="offer-tag">🔥 COMBO MAYORISTA DE LA SEMANA · CONSULTAR STOCK</span><h3>{o.title}</h3><p>{o.description}</p>
+      <div className="offer-sheen"/><span className="offer-tag"><Icon name="flame"/> COMBO MAYORISTA DE LA SEMANA · CONSULTAR STOCK</span><h3>{o.title}</h3><p>{o.description}</p>
       <div className="offer-combo">
-       <div className="offer-product">{productA?.image_url?<img src={productA.image_url} alt=""/>:<span>📦</span>}<strong>{o.quantity_a} {o.unit_a}</strong><small>{productA?.title} · {productA?.measure}</small></div>
-       {o.product_b_id&&<><span className="offer-plus">+</span><div className="offer-product">{productB?.image_url?<img src={productB.image_url} alt=""/>:<span>📦</span>}<strong>{o.quantity_b} {o.unit_b}</strong><small>{productB?.title} · {productB?.measure}</small></div></>}
+       <div className="offer-product">{productA?.image_url?<img src={productA.image_url} alt=""/>:<span className="offer-product-placeholder"><Icon name="package"/></span>}<strong>{o.quantity_a} {o.unit_a}</strong><small>{productA?.title} · {productA?.measure}</small></div>
+       {o.product_b_id&&<><span className="offer-plus">+</span><div className="offer-product">{productB?.image_url?<img src={productB.image_url} alt=""/>:<span className="offer-product-placeholder"><Icon name="package"/></span>}<strong>{o.quantity_b} {o.unit_b}</strong><small>{productB?.title} · {productB?.measure}</small></div></>}
       </div>
       {hasSeparatePrices(o)&&<div className="offer-split-prices"><div><strong>Producto A · {productA?.title}</strong><span>Retiro: {money(o.price_a_pickup??null)} / {o.unit_a.slice(0,-1)}</span><span>Con envío: {money(o.price_a_delivery??null)} / {o.unit_a.slice(0,-1)}</span></div><div><strong>Producto B · {productB?.title}</strong><span>Retiro: {money(o.price_b_pickup??null)} / {o.unit_b.slice(0,-1)}</span><span>Con envío: {money(o.price_b_delivery??null)} / {o.unit_b.slice(0,-1)}</span></div></div>}
       <div className="offer-price-row"><div><small>Retirando por fábrica · Total</small>{showOld&&<del>{money(before)}</del>}<strong>{money(total)}</strong>{showOld&&<span className="offer-saving">Ahorrás {money(before!-total!)}</span>}</div><div><small>Con envío</small><strong>{money(delivery)}</strong></div></div>
-      <div className="offer-buttons"><a className="btn offer-order" href={wu(waText)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> 🔥 Reservar esta promo por WhatsApp ↗</a>{onAdd&&<button type="button" className="offer-add" onClick={()=>onAdd({key:'offer-'+o.id,title:o.title,detail:detail(o),quantity:1,unit:'combo',pricePickup:total,priceDelivery:delivery})}>+ Agregar al pedido</button>}</div>
+      <div className="offer-buttons"><a className="btn offer-order" href={wu(waText)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> Reservar esta promo por WhatsApp ↗</a>{onAdd&&<button type="button" className="offer-add" onClick={()=>onAdd({key:'offer-'+o.id,title:o.title,detail:detail(o),quantity:1,unit:'combo',pricePickup:total,priceDelivery:delivery})}>+ Agregar al pedido</button>}</div>
     </article>;
    })}</div>
   </section>}
