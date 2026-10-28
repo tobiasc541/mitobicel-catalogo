@@ -8,7 +8,7 @@ Sitio completo de catálogo público y administración privada, construido con *
 - Ofertas semanales configurables; film Munsmawa 45 cm × 350 m, caja de 9 unidades, precio inicial de retiro **$46.725**.
 - Panel privado en `/admin`: ingresar con email/contraseña, editar precios, títulos, subtítulos, cantidad de paquetes/bulto, bolsas/rollito, unidades/caja, medidas, promociones y visibilidad.
 - Agregar nuevas medidas, descargar el **QR de la URL permanente**, actualizaciones automáticas desde Supabase.
-- Única imagen fija de la interfaz: `public/fabrica.svg`, una recreación vectorial de la placa de fábrica provista. Para utilizar el PNG original exacto, sustituí ese archivo y la referencia correspondiente en `components/Store.tsx`.
+- Imagen fija principal: subí tu imagen original a `public/mitobicel-fabrica.png`; temporalmente usa `public/fabrica.svg` si todavía no está. Logo: `public/logo-mitobicel.png`. Favicon: `app/icon.png` (incluimos `app/icon.svg` como fallback). Las imágenes de productos se suben desde `/admin`.
 
 ## Configuración de Supabase (antes del lanzamiento)
 1. Creá un **proyecto Supabase nuevo** e independiente de tus otras aplicaciones. No ejecutes este SQL en las bases existentes.
@@ -58,3 +58,21 @@ Visitar http://localhost:3000 y http://localhost:3000/admin.
 - RLS en ambas tablas: público lee únicamente el catálogo visible, no puede modificar nada.
 - Solo usuarios autenticados con UUID en `admin_users` tienen permisos de escritura.
 - El cliente nunca utiliza una clave secreta y el alta pública está desactivada.
+
+## Actualización de marca: subir tus PNG a GitHub
+Abrí https://github.com/tobiasc541/mitobicel-catalogo y en la carpeta correspondiente usá **Add file → Upload files**. Estos son los nombres exactos:
+- `public/mitobicel-fabrica.png`: imagen original grande del domicilio, horarios y WhatsApp. Reemplaza automáticamente el dibujo anterior.
+- `public/logo-mitobicel.png`: logo para la barra superior. Se utiliza automáticamente al subirlo.
+- `app/icon.png`: favicon cuadrado (256×256 recomendado). Dejá `app/icon.svg` como alternativa, o borralo luego de subir el favicon definitivo.
+
+**No necesitas cambiar código** al subir estos nombres. GitHub publica el cambio automáticamente en Vercel.
+
+## Imágenes de productos desde el superadministrador
+Ya existe un botón **Elegir imagen** en cada categoría del panel privado. Permite cargar PNG, JPG o WebP de hasta 3 MB. La imagen se asocia con todas las medidas de esa categoría, y se muestra al lado del título en la web pública.
+
+- Con una instalación **nueva** de Supabase ejecutá `supabase/schema.sql`.
+- Si ya ejecutaste antes `schema.sql`, no lo repitas: ejecutá solamente `supabase/upgrade.sql` en SQL Editor para crear el bucket y añadir la columna de fotos sin borrar tus precios.
+- Solo el superadmin autorizado en `admin_users` puede subir las imágenes.
+
+## Acceso privado
+La web pública ya no muestra ningún enlace a administrador. Para ingresar, visitá `https://TU_DOMINIO/admin` y accedé con email y contraseña de Supabase Auth. Ocultar ese enlace **no** reemplaza la autenticación, que sigue protegida por Supabase RLS.

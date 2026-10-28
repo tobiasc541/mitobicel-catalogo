@@ -21,8 +21,10 @@ create table if not exists public.catalog_items(
  price_delivery numeric(14,2) check (price_delivery is null or price_delivery >= 0),
  featured boolean not null default false,
  enabled boolean not null default true,
+ image_url text,
  position integer not null default 0
 );
+alter table public.catalog_items add column if not exists image_url text;
 alter table public.catalog_items enable row level security;
 grant select on public.catalog_items to anon,authenticated;
 grant insert,update,delete on public.catalog_items to authenticated;
@@ -50,12 +52,12 @@ values
 ('arr-20-30','arranque','Bolsas de arranque','Para comercios y verdulerías','20 × 30','Bulto',null,null,null,null,null,false,22),
 ('arr-25-35','arranque','Bolsas de arranque','Para comercios y verdulerías','25 × 35','Bulto',null,null,null,null,null,false,23),
 ('arr-30-40','arranque','Bolsas de arranque','Para comercios y verdulerías','30 × 40','Bulto',null,null,null,null,null,false,24),
-('res-45','residuos','Bolsas de basura','En rollito fondo estrella y en paquete · Residuos','45 × 60','Bulto',null,null,null,null,null,false,30),
-('res-50','residuos','Bolsas de basura','En rollito fondo estrella y en paquete · Residuos','50 × 70','Bulto',null,null,null,null,null,false,31),
+('res-45','residuos','Bolsas de basura en rollito fondo estrella','Residuos','45 × 60','Bulto',null,null,null,null,null,false,30),
+('res-50','residuos','Bolsas de basura en rollito fondo estrella','Residuos','50 × 70','Bulto',null,null,null,null,null,false,31),
+('res-60','residuos','Bolsas de basura en rollito fondo estrella','Residuos','60 × 90','Bulto',null,null,null,null,null,false,32),
 ('fol-14','folex','Folex','Presentaciones mayoristas','14 × 14','Bulto',null,null,null,null,null,false,40),
 ('fol-28','folex','Folex','Presentaciones mayoristas','14 × 28','Bulto',null,null,null,null,null,false,41),
 ('fol-20','folex','Folex','Presentaciones mayoristas','20 × 25','Bulto',null,null,null,null,null,false,42),
-('film-otros','film','Film adherente','Para cajones de frutas y verduras','Medidas a consultar','Consultar',null,null,null,null,null,false,50),
 ('muns-45','munsmawa','Film verdulero Munsmawa','Promoción semanal','45 cm × 350 m','Caja',null,null,9,46725,null,true,1)
 on conflict (id) do nothing;
 -- Autorizar TU usuario después de crearlo en Authentication > Users:
@@ -64,4 +66,18 @@ on conflict (id) do nothing;
 -- El registro público en Supabase Auth debe estar DESACTIVADO.
 
 -- Notificaciones Realtime (el frontend también consulta cada 15 segundos como respaldo).
-alter publication supabase_realtime add table public.catalog_items;
+do $do$
+begin
+ if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='catalog_items') then
+   alter publication supabase_realtime add table public.catalog_items;
+ end if;
+end $do$;
+-- Bucket público de fotografías con escrituras únicamente del superadmin.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+ values('catalog-images','catalog-images',true,3145728,ARRAY['image/png','image/jpeg','image/webp'])
+ on conflict (id) do update set public=true,file_size_limit=3145728,allowed_mime_types=excluded.allowed_mime_types;
+create policy "mitobicel admin category uploads"
+ on storage.objects for insert to authenticated
+ with check (bucket_id='catalog-images' and exists(
+ select 1 from public.admin_users where user_id=(select auth.uid())));
+
