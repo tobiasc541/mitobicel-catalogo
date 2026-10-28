@@ -103,3 +103,16 @@ En `/admin` aparecerá el editor de combos: elegí dos productos, cantidades en 
 3. Recargá la página publicada con Cmd+Shift+R. Si sigue en demo, la banda muestra cuál variable o formato es incorrecto; no muestra claves ni tokens.
 4. Una vez que las variables son válidas, si la consulta falla, la web mostrará el error de la API. En ese caso revisá en Supabase `catalog_items` y las políticas RLS.
 5. La contraseña del superadmin es la que configuraste en Supabase Authentication > Users, no está guardada en código.
+
+
+## B2B Premium v4 (octubre 2026)
+
+- Nuevo sistema tipográfico: Plus Jakarta Sans para titulares y texto, Playfair Display para promesas en cursiva, JetBrains Mono para especificaciones/precios, mediante Google Fonts.
+- Barra de operación mayorista con Maps; el contador muestra únicamente un vencimiento de promoción **real** establecido desde el panel en el campo `promo_deadline`. Si no existe fecha, no fabrica escasez.
+- El catálogo se divide en dos columnas independientes para que una tarjeta corta no deje un hueco bajo ella; en móvil pasa a una sola columna.
+- El reproductor 16:9 conserva la carga por Superadmin y ahora incluye tres capítulos de información clicables; son explicaciones, no certificaciones ni garantías técnicas.
+- La comparación directa con intermediarios usa diferencias comerciales descriptivas, sin inventar un ahorro porcentual o defectos de terceros.
+- Sección de consultas WhatsApp y FAQ interactiva. Para testimonios auténticos, ingresá en admin los campos `review_1_text`, `review_1_city`, etc. y marcá la autorización. Sin testimonios reales, se muestran ejemplos rotulados como ejemplos, no reseñas falsas.
+- Se conservan las condiciones mayoristas de 50 bultos mínimo y envío desde 100 bultos; confirmar disponibilidad por WhatsApp.
+- **Supabase:** no hace falta ejecutar otro SQL si `site_settings` de B2B v3 ya existe; las claves adicionales se crean automáticamente cuando guardás la sección de Marketing en /admin.
+- Se respetan Auth, las políticas RLS, `catalog_items`, `catalog_offers`, fotografías, video, precios, carrito y enlaces a WhatsApp.

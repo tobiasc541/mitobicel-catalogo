@@ -3,6 +3,7 @@ import {useState,useEffect,useCallback} from 'react';
 import {getDb} from '@/lib/client';
 import type {OrderLine} from '@/lib/order';
 import {Icon} from '@/components/Visuals';
+import {DirectComparison} from '@/components/Conversion';
 
 type Product={id:string;title:string;measure:string;presentation?:string;enabled:boolean;image_url?:string|null};
 type Offer={
@@ -11,8 +12,8 @@ quantity_a:number;quantity_b:number;unit_a:string;unit_b:string;
 price_pickup:number|null;price_delivery:number|null;price_old:number|null;
 price_mode:'combo'|'por_bulto';active:boolean;sort_order:number;
 };
-type Settings={factory_video_url:string;factory_video_poster:string;video_title:string;video_caption:string;social_proof_text:string;proof_count:string;proof_rating:string;proof_verified:string};
-const defaults:Settings={factory_video_url:'',factory_video_poster:'',video_title:'Calidad que podés ver en vivo antes de hacer tu pedido',video_caption:'Conocé el proceso productivo de MITOBICEL.',social_proof_text:'La confianza se construye con calidad, atención y precios de fábrica.',proof_count:'',proof_rating:'',proof_verified:'false'};
+type Settings={factory_video_url:string;factory_video_poster:string;video_title:string;video_caption:string;social_proof_text:string;proof_count:string;proof_rating:string;proof_verified:string;promo_deadline:string;review_1_text:string;review_1_city:string;review_1_verified:string;review_2_text:string;review_2_city:string;review_2_verified:string;review_3_text:string;review_3_city:string;review_3_verified:string};
+const defaults:Settings={factory_video_url:'',factory_video_poster:'',video_title:'Calidad que podés ver en vivo antes de hacer tu pedido',video_caption:'Conocé el proceso productivo de MITOBICEL.',social_proof_text:'La confianza se construye con calidad, atención y precios de fábrica.',proof_count:'',proof_rating:'',proof_verified:'false',promo_deadline:'',review_1_text:'',review_1_city:'',review_1_verified:'false',review_2_text:'',review_2_city:'',review_2_verified:'false',review_3_text:'',review_3_city:'',review_3_verified:'false'};
 const empty:Offer={id:'',title:'Promoción mayorista',description:'Precio especial para papeleras y distribuidores',product_a_id:'',product_b_id:null,quantity_a:50,quantity_b:0,unit_a:'bultos',unit_b:'bultos',price_pickup:null,price_delivery:null,price_old:null,price_mode:'combo',active:true,sort_order:1};
 const money=(n:number|null)=>n===null?'A consultar':new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
 const val=(v:string)=>v===''?null:Math.max(0,Number(v)||0);
@@ -35,6 +36,8 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
  const [settings,setSettings]=useState<Settings>({...defaults});
  const [ready,setReady]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState(''),[videoStarted,setVideoStarted]=useState(false);
  const [offerReady,setOfferReady]=useState(true);
+ const [chapter,setChapter]=useState(0);
+ const chapters=[{title:'EXTRUSIÓN Y MATERIA PRIMA',detail:'El proceso de fabricación comienza con la selección de materiales y la extrusión del polietileno según cada presentación.'},{title:'SELLADO Y CONFECCIÓN',detail:'Conocé cómo trabajamos el sellado, los fuelles y el fondo estrella para cada tipo de bolsa.'},{title:'ABASTECIMIENTO MAYORISTA',detail:'Consultá presentaciones disponibles, stock y condiciones para retiro por fábrica o envío a tu local.'}];
  const load=useCallback(async()=>{
   const db=getDb();if(!db)return;
   const [a,b]=await Promise.all([db.from('catalog_offers').select('*').order('sort_order'),db.from('site_settings').select('key,value')]);
@@ -121,15 +124,18 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
    <label>Número de clientes (solo verificado)<input inputMode="numeric" value={settings.proof_count} placeholder="Ej. 750" onChange={e=>setSettings(x=>({...x,proof_count:e.target.value.replace(/[^0-9]/g,'')}))}/></label>
    <label>Calificación real (si tenés datos)<input type="number" step=".1" min="1" max="5" value={settings.proof_rating} placeholder="Ej. 4.9" onChange={e=>setSettings(x=>({...x,proof_rating:e.target.value}))}/></label>
    <label className="checkbox-line wide"><input type="checkbox" checked={settings.proof_verified==='true'} onChange={e=>setSettings(x=>({...x,proof_verified:e.target.checked?'true':'false'}))}/> Confirmo que puedo respaldar las cifras antes de publicarlas</label>
+   <label className="wide">Final real de la promoción semanal (opcional) <input type="datetime-local" value={settings.promo_deadline?settings.promo_deadline.slice(0,16):''} onChange={e=>setSettings(x=>({...x,promo_deadline:e.target.value?new Date(e.target.value).toISOString():''}))}/></label>
+   <div className="wide review-admin-head"><h3>Comentarios reales de clientes (opcional)</h3><p>Se mostrarán solo los mensajes que hayas recibido y autorizado. No se generan opiniones ni horarios inventados.</p></div>
+   {([1,2,3] as const).map(i=><div className="review-admin-row wide" key={i}><label>Comentario #{i}<textarea rows={2} maxLength={350} value={settings[('review_'+i+'_text') as keyof Settings]} onChange={e=>setSettings(x=>({...x,['review_'+i+'_text']:e.target.value}))} placeholder="Pegá aquí el mensaje real autorizado"/></label><label>Localidad o referencia<input maxLength={80} value={settings[('review_'+i+'_city') as keyof Settings]} onChange={e=>setSettings(x=>({...x,['review_'+i+'_city']:e.target.value}))} placeholder="Ej. Zona Sur"/></label><label className="checkbox-line"><input type="checkbox" checked={settings[('review_'+i+'_verified') as keyof Settings]==='true'} onChange={e=>setSettings(x=>({...x,['review_'+i+'_verified']:e.target.checked?'true':'false'}))}/> Tengo autorización para publicar este comentario</label></div>)}
    <button className="btn green" disabled={saving} type="submit">Guardar video y prueba social</button>
   </form>
   {message&&<p role="status" className="admin-notice">{message}</p>}
  </section>;
  return <>
   <section className="vsl-section wrap" id="fabrica">
-   <div className="vsl-intro"><span className="overline">RECORRIDO POR NUESTRA PLANTA EN BURZACO</span><h2>{settings.video_title}</h2><p>{settings.video_caption}</p></div>
+   <div className="vsl-intro"><span className="overline">RECORRIDO POR NUESTRA PLANTA EN BURZACO</span><h2>{settings.video_title==='Calidad que podés ver en vivo antes de hacer tu pedido'?<>Calidad que podés ver <em>en vivo antes de hacer tu pedido.</em></>:settings.video_title}</h2><p>{settings.video_caption}</p></div>
    <div className="vsl-shell">
-    <div className="vsl-topline"><span className="vsl-dot"/> Planta industrial MITOBICEL · Extrusión y confección propia</div>
+    <div className="vsl-topline"><span className="vsl-source"><span className="vsl-dot"/> PLANTA BURZACO · EXTRUSIÓN PROPIA</span><span className="vsl-audio">♫ AUDIO DISPONIBLE</span></div>
     <div className="vsl-screen">
       {video ? (!videoStarted ?
         <button type="button" className="vsl-play" onClick={()=>setVideoStarted(true)} style={poster?{backgroundImage:'linear-gradient(#00190b55,#00190b55),url("'+poster+'")'}:{}} aria-label="Reproducir video de fábrica"><span className="vsl-play-circle">▶</span><strong>Reproducir video de la fábrica</strong></button>
@@ -137,7 +143,7 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
       ):<div className="vsl-empty"><span className="vsl-play-circle">▶</span><strong>Próximamente: recorrido por la planta</strong><small>En el superadmin se podrá publicar el video completo.</small></div>}
     </div>
    </div>
-   <div className="vsl-signals"><span>✓ Maquinaria de alta precisión</span><span>✓ Materiales seleccionados para cada producto</span><span>✓ Consultá stock y entrega inmediata</span></div>
+   <div className="vsl-chapters" role="tablist" aria-label="Etapas de la fábrica">{chapters.map((c,i)=><button key={i} type="button" className={'vsl-chapter'+(chapter===i?' selected':'')} role="tab" aria-selected={chapter===i} onClick={()=>setChapter(i)}><span>{String(i+1).padStart(2,'0')}</span><strong>{c.title}</strong></button>)}</div><div className="vsl-chapter-detail" role="tabpanel"><span className="chapter-kicker">ETAPA {String(chapter+1).padStart(2,'0')}</span><p>{chapters[chapter].detail}</p></div>
   </section>
   <section className="social-panel wrap">
    <div className="social-stars" aria-label="Cinco estrellas decorativas">★★★★★</div>
@@ -145,6 +151,7 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
    :<div className="social-number"><strong>Confianza mayorista</strong><span>{settings.social_proof_text}</span></div>}
    <div className="social-avatars" aria-hidden="true"><span>🏪</span><span>📦</span><span>🏭</span></div>
   </section>
+  <DirectComparison/>
   {offerReady&&offers.some(o=>o.active)&&<section className="wrap offer-section" id="combos">
    <div className="section-top"><div><span className="overline">EXCLUSIVO PARA COMPRAS MAYORISTAS</span><h2>Ofertas que <em>rinden más.</em></h2><p>Combos especiales, cantidades claras y precios directos de fábrica.</p></div></div>
    <div className="offers-grid">{offers.filter(o=>o.active).map(o=>{
@@ -153,13 +160,13 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
     const productA=byId(o.product_a_id),productB=byId(o.product_b_id);
     const waText='Hola MITOBICEL, quiero pedir la promoción '+o.title+': '+detail(o)+'. Retiro: '+money(total)+'. Con envío: '+money(delivery)+'. ¿Me confirman disponibilidad?';
     return <article className="offer-card" key={o.id}>
-      <div className="offer-sheen"/><span className="offer-tag">🔥 OFERTA SEMANAL POR BULTO CERRADO</span><h3>{o.title}</h3><p>{o.description}</p>
+      <div className="offer-sheen"/><span className="offer-tag">🔥 COMBO MAYORISTA DE LA SEMANA · CONSULTAR STOCK</span><h3>{o.title}</h3><p>{o.description}</p>
       <div className="offer-combo">
        <div className="offer-product">{productA?.image_url?<img src={productA.image_url} alt=""/>:<span>📦</span>}<strong>{o.quantity_a} {o.unit_a}</strong><small>{productA?.title} · {productA?.measure}</small></div>
        {o.product_b_id&&<><span className="offer-plus">+</span><div className="offer-product">{productB?.image_url?<img src={productB.image_url} alt=""/>:<span>📦</span>}<strong>{o.quantity_b} {o.unit_b}</strong><small>{productB?.title} · {productB?.measure}</small></div></>}
       </div>
       <div className="offer-price-row"><div><small>Retirando por fábrica</small>{showOld&&<del>{money(before)}</del>}<strong>{money(total)}</strong>{showOld&&<span className="offer-saving">Ahorrás {money(before!-total!)}</span>}</div><div><small>Con envío</small><strong>{money(delivery)}</strong></div></div>
-      <div className="offer-buttons"><a className="btn offer-order" href={wu(waText)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> Pedir esta promo por WhatsApp ↗</a>{onAdd&&<button type="button" className="offer-add" onClick={()=>onAdd({key:'offer-'+o.id,title:o.title,detail:detail(o),quantity:1,unit:'combo',pricePickup:total,priceDelivery:delivery})}>+ Agregar al pedido</button>}</div>
+      <div className="offer-buttons"><a className="btn offer-order" href={wu(waText)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> 🔥 Reservar esta promo por WhatsApp ↗</a>{onAdd&&<button type="button" className="offer-add" onClick={()=>onAdd({key:'offer-'+o.id,title:o.title,detail:detail(o),quantity:1,unit:'combo',pricePickup:total,priceDelivery:delivery})}>+ Agregar al pedido</button>}</div>
     </article>;
    })}</div>
   </section>}
