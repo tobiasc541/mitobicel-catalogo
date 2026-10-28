@@ -1,3 +1,10 @@
 import {createClient,type SupabaseClient} from '@supabase/supabase-js';
 let browser:SupabaseClient|null=null;
-export function getDb(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL;const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!url||!key)return null;if(!browser)browser=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return browser;}
+export function getDb(){
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+ const key=(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)?.trim();
+ if(!url||!key)return null;
+ try{const p=new URL(url);if(p.protocol!=='https:'||!p.hostname||p.pathname!=='/'||p.search)return null;}catch{return null;}
+ if(!browser)browser=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ return browser;
+}

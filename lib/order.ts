@@ -1,0 +1,2 @@
+export type OrderLine={key:string;title:string;detail:string;quantity:number;unit:'bulto'|'caja'|'combo';pricePickup?:number|null;priceDelivery?:number|null};
+export function whatsappQuote(lines:OrderLine[]){const parts=['Hola MITOBICEL. Quiero cotizar este pedido mayorista:',...lines.map((line,i)=>String(i+1)+'. '+line.title+' — '+line.detail+' — '+line.quantity+' '+line.unit+(line.quantity===1?'':'s')),'¿Me confirman disponibilidad y los precios retirando por fábrica y con envío?','¡Gracias!'];return 'https://wa.me/541162190702?text='+encodeURIComponent(parts.join('\n'));}
