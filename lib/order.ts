@@ -3,7 +3,7 @@ export type OrderLine={
  title:string;
  detail:string;
  quantity:number;
- unit:'bulto'|'caja'|'combo';
+ unit:'bulto'|'caja'|'combo'|'rollo'|'paquete';
  pricePickup?:number|null;
  priceDelivery?:number|null;
 };

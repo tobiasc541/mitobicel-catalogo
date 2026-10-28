@@ -127,3 +127,17 @@ El campo de bolsas de arranque ahora aparece como **Rollos/bulto** (el valor se 
 La carga de MP4 ahora admite selección de archivos de hasta **500 MB** y usa **TUS reanudable** con fragmentos de 6 MB. **Supabase Free tiene límite máximo de 50 MB por archivo**; para 500 MB necesitás un proyecto Supabase Pro, fijar el límite global en Storage Settings y aumentar el límite de `factory-media` a 500 MB. El SQL tiene la sentencia correspondiente **comentada** para que no falle en Free. Para proyectos Free podés seguir pegando un link de YouTube o Vimeo, incluso para videos grandes.
 
 El video se sube directamente del navegador a Supabase Storage (sin pasar por los servidores de Vercel). No refresques ni cierres el navegador durante una carga grande; el progreso aparece en el panel. Los videos grandes pueden consumir tráfico de salida, por lo que conviene publicar una versión comprimida para clientes móviles.
+
+## Catálogo 2 · Catálogo completo para clientes mayoristas
+
+La ruta pública **/catalogo-clientes** es la copia visual del catálogo de MITOBICEL: misma identidad, Hero, video de fábrica, promociones, búsqueda por medida, carrito con totales, WhatsApp y footer.
+
+La dirección **/** permanece sin cambios; no modificar el QR ya impreso ni el contenido/precios de `public.catalog_items`. No se agregó ningún enlace a `/catalogo-clientes` en la página pública del QR ni se indexa en buscadores.
+
+**Configuración:** ejecutar `supabase/catalogo_2.sql` en **el proyecto Supabase de MITOBICEL**. Crea la nueva tabla `public.catalog_full_items` con lectura pública solo de filas visibles y escrituras limitadas a miembros de `public.admin_users`. Copia una sola vez los registros iniciales del catálogo pequeño (incluidas fotos y precios), pero a partir de ese momento **las ediciones son independientes**. Es aditivo y repetible; `ON CONFLICT DO NOTHING` respeta filas ya cargadas.
+
+**Administración:** entrar en **/admin/catalogo-2** con las mismas credenciales de `/admin`. El panel muestra **Catálogo 2** y permite crear líneas nuevas, agregar medidas, cambiar precios, presentación, unidades, imagen y visibilidad, ordenar filas y eliminar productos solo de ese catálogo. El panel original `/admin` ofrece una pestaña a la segunda gestión. El nuevo catálogo público no muestra el acceso administrador.
+
+**PDF:** el catálogo completo todavía no se puede cargar hasta que el usuario proporcione el PDF. Después de recibirlo, extraer sus líneas y presentaciones, revisar aquellas con datos faltantes y cargarlas solo en `public.catalog_full_items`. No reemplazar `catalog_items` ni alterar el QR.
+
+**Nota de privacidad:** la ruta para clientes se distribuye por enlace y no se anuncia en la página del QR, pero no es un espacio protegido por contraseña. Cualquier persona con el URL puede visualizarla; RLS protege exclusivamente la edición.

@@ -376,3 +376,32 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  .cart-summary-row span{font-size:11px}
  .cart-summary-row strong{font-size:14px}
 }
+
+/* Nuevo Catálogo 2 - aislado del catálogo de tarjetas QR */
+.full-catalog-app .product-grid.masonry-grid{margin-top:7px}
+.full-catalog-app .hero-pill{max-width:100%}
+.full-catalog-app .hero-left{min-width:0}
+.full-catalog-message{padding:28px 24px;text-align:center;background:#f8fff9;border:1px solid #c2dec9;border-radius:16px;max-width:820px;margin:0 auto;display:flex;align-items:center;flex-direction:column;gap:13px;color:#244f35;font-size:14px}
+.full-catalog-message strong{font-size:19px}
+.full-catalog-message p{font-size:13px;line-height:1.7;color:#65806d}
+.admin-catalog-switch{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 19px;padding:9px;background:#edf6ef;border:1px solid #cfe4d4;border-radius:16px}
+.admin-catalog-tab{display:inline-flex;justify-content:center;align-items:center;min-height:44px;padding:10px 16px;border:1px solid #cbded1;background:white;border-radius:11px;color:#3c6649;font-size:12px;font-weight:900;line-height:1.4}
+.admin-catalog-tab.active{color:#fff;background:#0c6236;border-color:#0c6236;box-shadow:0 7px 16px #09372025}
+.admin-catalog-preview{margin-left:auto;font-size:12px;color:#0a7942;font-weight:900;padding:10px 14px}
+.full-admin-add-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 0 21px}
+.full-admin-add-form>.btn{align-self:end;min-height:44px}
+.full-admin-add-measure{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.7fr) auto;gap:12px;align-items:end;background:#f1f9f3;padding:16px;border:1px solid #d2e9d6;border-radius:13px}
+.full-admin-add-measure .btn{min-height:44px}
+.full-catalog-admin .category-admin-header .upload-control{display:inline-flex;position:relative;align-items:center;cursor:pointer}
+.full-catalog-admin .upload-control input[type=file]{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.full-admin-remove{color:#9d2234!important;border-color:#e9c5cb!important;background:#fff4f5!important}
+.full-catalog-admin .edit-fields{align-items:start}
+.full-catalog-admin .admin-banner{border:1px solid #166640}
+@media(max-width:760px){
+ .admin-catalog-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .admin-catalog-tab{font-size:10px;padding:8px;min-height:45px}
+ .admin-catalog-preview{grid-column:1/-1;margin:0;text-align:center}
+ .full-admin-add-measure{grid-template-columns:1fr}
+ .full-admin-add-form{grid-template-columns:1fr}
+ .full-catalog-admin .edit-actions{justify-content:flex-start}
+}
