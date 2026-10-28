@@ -4,7 +4,7 @@ const WA='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67
 export function Icon({name,...props}:SVGProps<SVGSVGElement>&{name:Name}){
  if(name==='whatsapp')return <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}><path d={WA}/></svg>;
  if(name==='play')return <svg width={32} height={32} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" {...props}><path d="M7.5 4.75a1 1 0 0 1 1.52-.85l11.1 7.25a1 1 0 0 1 0 1.7L9.02 20.1a1 1 0 0 1-1.52-.85V4.75Z"/></svg>;
- const paths:Record<Exclude<Name,'whatsapp'>,string[]>={
+ const paths:Record<Exclude<Name,'whatsapp'|'play'>,string[]>={
  factory:['M3 21h18V9l-6 3V9l-6 3V3H3v18Z','M7 17h.01','M12 17h.01','M17 17h.01'],
  award:['M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z','m8 14-1 8 4-2 4 2-1-8','m10 9 2 2 3-3'],
  package:['m12 2 9 5-9 5-9-5 9-5Z','M3 7v10l9 5 9-5V7','M12 12v10'],
