@@ -76,3 +76,9 @@ Ya existe un botón **Elegir imagen** en cada categoría del panel privado. Perm
 
 ## Acceso privado
 La web pública ya no muestra ningún enlace a administrador. Para ingresar, visitá `https://TU_DOMINIO/admin` y accedé con email y contraseña de Supabase Auth. Ocultar ese enlace **no** reemplaza la autenticación, que sigue protegida por Supabase RLS.
+
+## Promociones combinadas y video
+Una vez instalado el esquema base, ejecutá **supabase/campaigns.sql** desde SQL Editor en el proyecto de MITOBICEL. Este paso crea las tablas `combo_promotions` y `site_settings` con RLS: el público solo puede leer, el admin autorizado puede editar.
+En `/admin` aparecerá el editor de combos: elegí dos productos, cantidades en bultos, precio total de retiro, precio total con envío y activación. El formulario también acepta la URL de un video alojado en YouTube o Vimeo para el VSL de fábrica, y una frase de confianza. Solo indicá un número de clientes si podés respaldarlo. El enlace a Google Maps abre una búsqueda de la dirección declarada, no una ficha empresarial verificada.
+
+**Importante:** si la web muestra `Invalid path specified in request URL`, revisar en Vercel los valores de `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. La URL debe ser el Project URL exacto de ese proyecto Supabase (no una URL del dashboard ni una API key en lugar de URL). Volver a desplegar tras cambiarlas. 
