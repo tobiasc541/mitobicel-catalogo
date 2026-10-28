@@ -340,3 +340,39 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .factory-map{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .factory-map svg{height:15px;width:15px;flex:none}
 @media(max-width:650px){.vsl-play-circle svg{width:26px;height:26px}}
+
+
+/* Carrito Express B2B: importes siempre visibles, incluso cuando está contraído. */
+.express-cart{max-width:710px}
+.express-cart .cart-bar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px;align-items:center;padding:13px 17px}
+.cart-title{min-width:0}
+.cart-title>div{min-width:0}
+.cart-header-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:center}
+.cart-header-totals>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cart-header-totals span{color:#b8e8c9;font-size:10px;font-weight:700;white-space:nowrap}
+.cart-header-totals strong{color:#fff;font-size:15px;font-weight:900;line-height:1.2;font-family:var(--mono);white-space:nowrap}
+.cart-line-prices{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:5px}
+.cart-line-prices span{font-size:10px;font-weight:700;color:#376b48}
+.cart-summary{margin-top:14px;padding:13px 16px;background:#edfaef;border:1px solid #bde6c9;border-radius:12px}
+.cart-summary-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 0}
+.cart-summary-row+ .cart-summary-row{border-top:1px solid #cae7d0}
+.cart-summary-row span{font-size:12px;font-weight:700;color:#1d5532}
+.cart-summary-row strong{font-size:20px;color:#006f31;font-weight:900;font-family:var(--mono);white-space:nowrap}
+.cart-pending{font-size:11px;color:#92550a;line-height:1.55;margin:8px 0 0}
+@media(max-width:720px){
+ .express-cart{max-width:calc(100vw - 22px);width:calc(100vw - 22px)}
+ .express-cart .cart-bar{grid-template-columns:minmax(0,1fr) auto;gap:10px 8px;padding:11px 13px}
+ .cart-header-totals{grid-column:1/-1;grid-row:2;gap:10px;padding:9px 3px 0;border-top:1px solid #ffffff2c}
+ .cart-header-totals>div{gap:4px}
+ .cart-header-totals strong{font-size:14px}
+ .cart-toggle{grid-column:2;grid-row:1}
+ .cart-details{max-height:calc(75dvh - 118px)}
+ .cart-summary-row strong{font-size:17px}
+}
+@media(max-width:380px){
+ .cart-header-totals span{font-size:9px}
+ .cart-header-totals strong{font-size:12px}
+ .cart-summary{padding:11px}
+ .cart-summary-row span{font-size:11px}
+ .cart-summary-row strong{font-size:14px}
+}
