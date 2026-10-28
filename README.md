@@ -95,3 +95,11 @@ En `/admin` aparecerá el editor de combos: elegí dos productos, cantidades en 
 - Cada presentación dispone de Cotizar/Agregar; el carrito flotante arma un único mensaje de WhatsApp con todas las cantidades.
 - En móvil 360–414 px las tablas cambian a fichas individuales. Validar en Chrome DevTools antes de imprimir el QR.
 - Los porcentajes concretos de ahorro y las cifras de satisfacción no deben afirmarse sin medición real.
+
+
+## Solución si aparece «Catálogo en modo demostración» con Supabase configurado
+1. En Vercel → Settings → Environment Variables confirmá que `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` están en **Production**. La URL tiene que ser la Project URL (https://PROJECT_REF.supabase.co), sin `/rest/v1`, comillas ni espacios.
+2. **IMPORTANTE:** al añadir o editar variables `NEXT_PUBLIC_` tenés que crear un nuevo despliegue Production (Deployments → último deployment → ⋯ → Redeploy); el estado final debe ser **Ready**. Las variables se insertan en el bundle del navegador durante la compilación.
+3. Recargá la página publicada con Cmd+Shift+R. Si sigue en demo, la banda muestra cuál variable o formato es incorrecto; no muestra claves ni tokens.
+4. Una vez que las variables son válidas, si la consulta falla, la web mostrará el error de la API. En ese caso revisá en Supabase `catalog_items` y las políticas RLS.
+5. La contraseña del superadmin es la que configuraste en Supabase Authentication > Users, no está guardada en código.
