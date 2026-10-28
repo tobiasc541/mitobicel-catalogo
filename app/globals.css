@@ -185,3 +185,14 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  .offer-admin-two-prices,.offer-admin-total-preview,.offer-split-prices{grid-template-columns:1fr}
  .offer-admin-product-prices{padding:13px}
 }
+
+/* El VSL utiliza el formato nativo del video: vertical 9:16 (Reels) u horizontal 16:9. */
+.vsl-shell.vsl-portrait{width:100%;max-width:420px;margin-inline:auto;padding:10px;border-radius:22px}
+.vsl-shell.vsl-portrait .vsl-screen{width:100%;aspect-ratio:9/16;border-radius:14px}
+.vsl-shell.vsl-portrait .vsl-screen video{width:100%;height:100%;object-fit:contain;background:#020d07}
+.vsl-shell.vsl-portrait .vsl-topline{font-size:8px;letter-spacing:0;gap:5px;padding:4px 4px 10px}
+.vsl-shell.vsl-portrait .vsl-audio{font-size:7px;padding:5px 7px}
+.vsl-shell.vsl-portrait .vsl-source{gap:6px}
+.vsl-shell.vsl-portrait .vsl-dot{width:7px;height:7px;flex-basis:7px}
+.vsl-shell.vsl-portrait .vsl-play{background-size:cover;background-position:center}
+@media(max-width:480px){.vsl-shell.vsl-portrait{width:100%;max-width:100%;padding:8px;border-radius:18px}.vsl-shell.vsl-portrait .vsl-screen{border-radius:12px}}
