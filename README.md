@@ -116,3 +116,14 @@ En `/admin` aparecerá el editor de combos: elegí dos productos, cantidades en 
 - Se conservan las condiciones mayoristas de 50 bultos mínimo y envío desde 100 bultos; confirmar disponibilidad por WhatsApp.
 - **Supabase:** no hace falta ejecutar otro SQL si `site_settings` de B2B v3 ya existe; las claves adicionales se crean automáticamente cuando guardás la sección de Marketing en /admin.
 - Se respetan Auth, las políticas RLS, `catalog_items`, `catalog_offers`, fotografías, video, precios, carrito y enlaces a WhatsApp.
+
+
+## Videos de 400–500 MB y promociones con precios separados (2026-10-28)
+
+Ejecutá en **Supabase SQL Editor** el archivo [`supabase/mitobicel_precios_video_v4.sql`](supabase/mitobicel_precios_video_v4.sql). Agrega cuatro columnas de precios por producto A/B, no elimina ofertas anteriores. En el superadmin, al seleccionar dos productos combinados se muestran precio de retiro y envío para **cada producto**, y se calculan los precios totales (cantidad × precio unitario) automáticamente.
+
+El campo de bolsas de arranque ahora aparece como **Rollos/bulto** (el valor se almacena en la columna existente `packages`, para no perder cantidades ya cargadas). Bolsa camiseta sigue diciendo **Paquetes/bulto**.
+
+La carga de MP4 ahora admite selección de archivos de hasta **500 MB** y usa **TUS reanudable** con fragmentos de 6 MB. **Supabase Free tiene límite máximo de 50 MB por archivo**; para 500 MB necesitás un proyecto Supabase Pro, fijar el límite global en Storage Settings y aumentar el límite de `factory-media` a 500 MB. El SQL tiene la sentencia correspondiente **comentada** para que no falle en Free. Para proyectos Free podés seguir pegando un link de YouTube o Vimeo, incluso para videos grandes.
+
+El video se sube directamente del navegador a Supabase Storage (sin pasar por los servidores de Vercel). No refresques ni cierres el navegador durante una carga grande; el progreso aparece en el panel. Los videos grandes pueden consumir tráfico de salida, por lo que conviene publicar una versión comprimida para clientes móviles.

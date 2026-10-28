@@ -159,3 +159,29 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 @media(max-width:650px){.industrial-bar{min-height:45px}.scoreboard-inner{padding:8px 14px;gap:6px;align-items:center}.scoreboard-plant{font-size:8px}.scoreboard-plant strong{font-size:8px;max-width:145px;line-height:1.45}.scoreboard-sep{display:none}.scoreboard-map{font-size:0;border:0;padding:0}.scoreboard-map:before{content:'⌖ FÁBRICA';font-family:var(--mono);font-size:9px;color:#d0f9dd}.scoreboard-map>span{font-size:12px}.scoreboard-timer{gap:5px}.scoreboard-timer>span{font-size:7px;max-width:65px;line-height:1.3}.timer-digit{font-size:9px;min-width:11px;height:19px}.hero{padding-top:35px;padding-bottom:43px}.hero-pill{font-size:8px;line-height:1.5}.hero h1{font-size:clamp(34px,9vw,46px)}.hero h1 em{margin-top:4px}.hero-buttons .btn{font-size:11px;min-height:52px}.hero-stats{gap:7px}.hero-stats>div{padding:12px 8px;border-radius:12px}.hero-stats b{font-size:15px}.hero-stats span{font-size:8px}.hero-stats small{font-size:7px}.hero-right{transform:none}.product-grid.masonry-grid{grid-template-columns:1fr}.product-head .product-picture{width:66px;height:72px;flex-basis:66px}.product-head h3{font-size:18px}.product-head .overline{font-size:8px}.vsl-chapters{grid-template-columns:1fr;gap:7px}.vsl-chapter{min-height:58px;padding:10px 13px}.vsl-chapter>span{font-size:17px}.vsl-topline{font-size:8px}.vsl-audio{font-size:8px}.vsl-chapter-detail{padding:14px}.contrast-section{margin-top:41px;padding:48px 0}.contrast-grid{grid-template-columns:1fr;gap:12px}.contrast-intro h2{font-size:32px}.contrast-other,.contrast-us{padding:18px}.contrast-bottom .btn{font-size:10px}.message-grid{grid-template-columns:1fr}.messages-section,.faq-section{padding-top:54px}.message-card{padding:17px}.faq-item>button{padding:15px;font-size:12px;min-height:59px}.faq-answer{padding:0 15px 17px}.faq-cta{text-align:center}.review-admin-row{grid-template-columns:1fr}.review-admin-row>.checkbox-line{grid-column:auto}.scoreboard-plant>.scoreboard-led{display:none}}
 @media(max-width:390px){.hero h1{font-size:33px}.scoreboard-tools{gap:5px}.scoreboard-plant strong{font-size:7px}.scoreboard-map:before{content:'⌖ MAPA';font-size:8px}.timer-digit{min-width:9px}.product-bottom a{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.hero-buttons .btn.red:after,.scoreboard-led{animation:none}}
+
+/* Administración comercial — desglose por producto y videos reanudables */
+.offer-admin-prices-intro{display:flex;flex-direction:column;gap:6px;padding:15px 18px;border-radius:12px;background:#eefaf2;border:1px solid #bce7ca}
+.offer-admin-prices-intro strong{font-size:14px;color:#085a2e}
+.offer-admin-prices-intro p{font-size:12px;line-height:1.65;margin:0;color:#547562}
+.offer-admin-product-prices{display:flex;flex-direction:column;gap:13px;border-radius:14px;border:1px solid #d5e9da;background:#fbfefc;padding:18px;min-width:0}
+.offer-admin-product-prices>strong{font-size:12px;font-family:var(--mono);color:#0a5f34;line-height:1.6}
+.offer-admin-two-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.offer-admin-total-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;border-radius:14px;background:#06291a;color:#fff;padding:20px}
+.offer-admin-total-preview>div{display:flex;flex-direction:column;gap:6px}
+.offer-admin-total-preview small{font-size:11px;color:#bee5cd}
+.offer-admin-total-preview strong{font-family:var(--mono);font-size:clamp(17px,2.4vw,24px)}
+.video-upload-progress{background:#e5f9ec;border:1px solid #a7dcba;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.video-upload-progress strong{font-size:12px;color:#075b2f}
+.video-upload-progress small,.video-storage-note{font-size:11px;color:#536f5c;line-height:1.7}
+.video-progress-track{height:12px;width:100%;border-radius:20px;overflow:hidden;background:#b3ddc5}
+.video-progress-track>div{height:100%;background:linear-gradient(90deg,#059669,#16c784);border-radius:20px;transition:width .3s ease}
+.video-storage-note{background:#fff9e5;border:1px solid #f1dfa4;border-radius:12px;padding:13px 16px;margin:0!important}
+.offer-split-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:13px}
+.offer-split-prices>div{display:flex;flex-direction:column;gap:7px;padding:13px;border-radius:12px;background:#ffffff24;border:1px solid #ffffff5d}
+.offer-split-prices strong{font-size:12px;color:#fff;line-height:1.4}
+.offer-split-prices span{font-size:11px;color:#ffe2e3;line-height:1.55}
+@media(max-width:650px){
+ .offer-admin-two-prices,.offer-admin-total-preview,.offer-split-prices{grid-template-columns:1fr}
+ .offer-admin-product-prices{padding:13px}
+}
