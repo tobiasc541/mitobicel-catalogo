@@ -255,3 +255,73 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 
 
 @media(max-width:480px){}
+
+/* MITOBICEL · Pulido final de conversión: una sola promoción y alineación consistente */
+.hero-buttons{display:flex;justify-content:flex-start}
+.hero-buttons>.btn.red{isolation:isolate;overflow:hidden;transition:transform .22s ease,box-shadow .22s ease}
+.hero-buttons>.btn.red:hover{transform:translateY(-4px);box-shadow:0 18px 42px #ce173944}
+.verified-proof{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 11px;text-align:center;color:#284833;font-size:12px;font-weight:700;line-height:1.55}
+.verified-proof-stars{display:inline-flex;white-space:nowrap;color:#e7ab26;letter-spacing:2px;font-size:21px;filter:drop-shadow(0 3px 8px #d99f302e)}
+.verified-proof strong{font-family:var(--mono);font-weight:900;font-size:15px;color:#092f1c}
+.verified-proof>span:last-child{max-width:480px}
+.verified-proof-hero{justify-content:flex-start;margin:24px 0 10px}
+.verified-proof-video{width:min(100%,800px);margin:29px auto 22px;padding:15px 18px;border:1px solid #d9e9df;border-radius:14px;background:#ffffffc7;box-shadow:0 9px 26px #144e2510}
+.offer-section{width:100%;padding-top:70px;padding-bottom:12px}
+.offer-section .section-top{justify-content:center;align-items:center;text-align:center;margin:0 auto 28px}
+.offer-section .section-top>div{width:100%;max-width:740px;margin-inline:auto}
+.offer-section .section-top h2{font-size:clamp(30px,4vw,46px);margin:16px 0 10px}
+.offer-section .section-top p{max-width:600px;margin:0 auto;font-size:13px;line-height:1.75}
+.weekly-promo-badge{display:inline-flex;align-items:center;justify-content:center;gap:7px;text-align:center;max-width:100%;border:1px solid #ffb3b8;background:#fff1ef;color:#b31227;border-radius:999px;padding:10px 16px;font-family:var(--mono);font-weight:900;letter-spacing:.15px;font-size:10px;box-shadow:0 0 0 5px #ec29430b;animation:weeklyGlow 3.2s ease-in-out infinite}
+@keyframes weeklyGlow{50%{box-shadow:0 0 0 10px #ec294305,0 0 24px #e5194030}}
+.offer-section .offers-grid{width:100%;max-width:850px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}
+.offer-section .offer-card{width:100%;max-width:850px;margin:0 auto;padding:clamp(20px,3.2vw,38px);border:2px solid #ef7383;box-shadow:0 21px 65px -18px #b4112390,0 0 0 5px #ff496c12;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.offer-section .offer-card:hover{transform:translateY(-4px);border-color:#ffa6af;box-shadow:0 28px 80px -14px #b41123a1,0 0 0 6px #ff496c18}
+.offer-section .offer-combo{display:flex;align-items:stretch;justify-content:center;gap:14px;max-width:710px;margin:23px auto}
+.offer-section .offer-product{min-width:0;flex:1;padding:16px}
+.offer-section .offer-plus{font-size:34px;text-shadow:0 0 17px #fff9;color:#fff}
+.offer-section .offer-price-row{max-width:710px;margin:0 auto}
+.offer-section .offer-buttons{max-width:650px;margin:8px auto 0}
+.offer-section .offer-order{overflow:hidden;position:relative;isolation:isolate;transition:transform .2s ease,box-shadow .2s ease}
+.offer-section .offer-order:after{content:'';position:absolute;top:-50%;bottom:-50%;left:-55%;width:34%;transform:rotate(18deg);pointer-events:none;background:linear-gradient(90deg,transparent,#ffffff65,transparent);animation:offerButtonGlint 6s ease-in-out infinite}
+.offer-section .offer-order:hover{transform:translateY(-2px);box-shadow:0 9px 30px #00301f40}
+@keyframes offerButtonGlint{0%,30%{left:-55%}55%,100%{left:125%}}
+#productos .section-top,.messages-section .section-top{display:flex;justify-content:center;text-align:center;align-items:center}
+#productos .section-top>div,.messages-section .section-top>div{width:100%;max-width:760px;margin:0 auto}
+#productos .section-top h2,.messages-section .section-top h2{line-height:1.16}
+#productos .section-top p,.messages-section .section-top p{max-width:650px;margin:0 auto}
+#productos .filters{width:100%;max-width:700px;margin:0 auto 27px}
+#productos .filters input{text-align:center}
+.product-card tbody tr{transition:background-color .18s ease}
+.product-card tbody tr:hover{background:#e8faeea8}
+.faq-heading{max-width:770px;text-align:center;margin-inline:auto}
+.buy-card{max-width:100%;text-align:center}
+.buy-card .steps{text-align:left}
+.buy-card .steps>div{min-width:0}
+.edit-row-dirty{border-color:#ddac50!important;background:#fffef8!important;box-shadow:0 0 0 2px #f0cf7b25}
+.edit-status{display:inline-flex;align-items:center;font-size:11px;color:#58705d;font-weight:700}
+.edit-status.unsaved{color:#9e5c03;font-weight:900}
+.edit-row-dirty .btn.green{box-shadow:0 7px 16px #008d4440}
+.site-footer{margin-top:62px}
+@media(max-width:760px){
+ .hero-buttons{display:grid;grid-template-columns:1fr}
+ .verified-proof-hero,.verified-proof-video{justify-content:center;text-align:center}
+ .offer-section{padding-top:53px}
+ .offer-section .offer-card{padding:22px 16px}
+ .offer-section .offer-combo{gap:9px}
+ .offer-section .offer-product{padding:12px 8px}
+ .offer-section .offer-plus{font-size:25px}
+ .weekly-promo-badge{font-size:8px;padding:9px 10px}
+ #productos .section-top,#productos .filters,.messages-section .section-top{text-align:center}
+ .verified-proof{font-size:11px}
+ .verified-proof-stars{font-size:18px}
+}
+@media(max-width:390px){
+ .offer-section .offer-combo{gap:6px}
+ .offer-section .offer-product{padding:10px 6px}
+ .offer-section .offer-product small{font-size:9px}
+ .offer-section .offer-plus{font-size:21px}
+ .verified-proof>span:last-child{flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ .weekly-promo-badge,.offer-section .offer-order:after{animation:none}
+}

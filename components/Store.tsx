@@ -1,10 +1,11 @@
 'use client';
-import {useEffect,useMemo,useState,useCallback} from 'react';
+import {useEffect,useState,useCallback,useRef} from 'react';
 import QRCode from 'qrcode';
 import {getDb,getDbConfigIssue} from '@/lib/client';
 import {Icon} from '@/components/Visuals';
 import Campaigns from '@/components/Campaigns';
 import IndustrialBar from '@/components/IndustrialBar';
+import SocialProof from '@/components/SocialProof';
 import {SocialQuestions,WholesaleFAQ} from '@/components/Conversion';
 import WholesaleCart from '@/components/WholesaleCart';
 import type {OrderLine} from '@/lib/order';
@@ -38,6 +39,11 @@ function FactoryPhoto(){const [fallback,setFallback]=useState(false);return <img
 
 export default function Store({admin=false}:{admin?:boolean}){
  const [items,setItems]=useState<Item[]>(seeds);
+ // Los cambios del formulario no se reemplazan por lecturas periódicas/realtime.
+ const dirtyItems=useRef(new Set<string>());
+ const editVersions=useRef(new Map<string,number>());
+ const requestVersion=useRef(0);
+ const [,setEditTick]=useState(0);
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[authorized,setAuthorized]=useState(false),[checking,setChecking]=useState(admin);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[configured,setConfigured]=useState(true);
  const [search,setSearch]=useState('');
@@ -49,12 +55,22 @@ export default function Store({admin=false}:{admin?:boolean}){
  const [newCategory,setNewCategory]=useState('camiseta'),[newSize,setNewSize]=useState('');
  const db=getDb();
  const load=useCallback(async(isAdmin=false)=>{
-   const client=getDb();if(!client){setConfigured(false);return;}
+   const client=getDb();
+   if(!client){setConfigured(false);return;}
+   const thisRequest=++requestVersion.current;
    const q=client.from('catalog_items').select('*').order('position',{ascending:true});
    const {data,error}=await (isAdmin?q:q.eq('enabled',true));
+   if(thisRequest!==requestVersion.current)return;
    if(error){setMessage('No se pudieron consultar los productos: '+error.message);return;}
-   setItems((data||[]) as Item[]);setConfigured(true);
+   setItems(previous=>{
+      const local=new Map(previous.map(row=>[row.id,row]));
+      return ((data||[]) as Item[]).map(remote=>isAdmin&&dirtyItems.current.has(remote.id)
+         ?local.get(remote.id)||remote
+         :remote);
+   });
+   setConfigured(true);
  },[]);
+
  useEffect(()=>{if(typeof window!=='undefined')setQrUrl(window.location.origin+'/');
    const client=getDb();
    if(!client){setConfigured(false);setChecking(false);return;}
@@ -77,12 +93,41 @@ export default function Store({admin=false}:{admin?:boolean}){
    if(accessErr||!access){await db.auth.signOut();setMessage('Este usuario no tiene permisos de superadministrador.');setBusy(false);return;}
    setAuthorized(true);setPassword('');await load(true);setBusy(false);
  }
- async function logout(){if(db)await db.auth.signOut();setAuthorized(false);setEmail('');setMessage('');}
- function patch(id:string,key:keyof Item,value:string|number|boolean|null){setItems(prev=>prev.map(item=>item.id===id?{...item,[key]:value}:item));}
- async function save(item:Item){if(!db||!authorized)return;setBusy(true);setMessage('');
-   const {error}=await db.from('catalog_items').update({category:item.category,title:item.title,subtitle:item.subtitle,measure:item.measure,presentation:item.presentation,packages:item.packages,bags_per_roll:item.bags_per_roll,units_per_box:item.units_per_box,price_pickup:item.price_pickup,price_delivery:item.price_delivery,featured:item.featured,enabled:item.enabled,position:item.position,image_url:item.image_url??null}).eq('id',item.id);
-   setMessage(error?'Error al guardar: '+error.message:'Cambios guardados. El catálogo público se actualiza automáticamente.');setBusy(false);
+ async function logout(){if(db)await db.auth.signOut();dirtyItems.current.clear();editVersions.current.clear();setAuthorized(false);setEmail('');setMessage('');}
+ function patch(id:string,key:keyof Item,value:string|number|boolean|null){
+   dirtyItems.current.add(id);
+   editVersions.current.set(id,(editVersions.current.get(id)||0)+1);
+   setEditTick(t=>t+1);
+   setItems(prev=>prev.map(item=>item.id===id?{...item,[key]:value}:item));
  }
+ async function save(item:Item){
+   if(!db||!authorized)return;
+   setBusy(true);
+   setMessage('');
+   const version=editVersions.current.get(item.id)||0;
+   // .select() permite verificar que la fila se guardó realmente,
+   // evitando informar éxito si RLS no autorizó el UPDATE.
+   const {data,error}=await db.from('catalog_items').update({
+    category:item.category,title:item.title,subtitle:item.subtitle,
+    measure:item.measure,presentation:item.presentation,packages:item.packages,
+    bags_per_roll:item.bags_per_roll,units_per_box:item.units_per_box,
+    price_pickup:item.price_pickup,price_delivery:item.price_delivery,
+    featured:item.featured,enabled:item.enabled,position:item.position
+   }).eq('id',item.id).select('*').maybeSingle();
+   if(error||!data){
+     setMessage('No se guardó '+item.title+' '+item.measure+': '+(error?.message||'Supabase no confirmó la actualización. Revisá permisos del administrador.'));
+   }else if((editVersions.current.get(item.id)||0)===version){
+     requestVersion.current++;
+     dirtyItems.current.delete(item.id);
+     setEditTick(t=>t+1);
+     setItems(prev=>prev.map(row=>row.id===item.id?data as Item:row));
+     setMessage('Guardado y verificado en Supabase: '+item.title+' '+item.measure+'.');
+   }else{
+     setMessage('La última versión se guardó, pero hiciste otros cambios mientras se enviaba. Volvé a guardar esta fila.');
+   }
+   setBusy(false);
+ }
+
  async function addMeasure(){if(!db||!authorized||!newSize.trim())return;setBusy(true);
    const same=items.filter(x=>x.category===newCategory);
    const template=same[0];
@@ -116,7 +161,6 @@ export default function Store({admin=false}:{admin?:boolean}){
  const norm=(s:string)=>s.toLocaleLowerCase('es').replace(/[×x]/g,'x').replace(/\s+/g,'');
  const visible=items.filter(p=>p.enabled&&p.category!=='film').filter(p=>norm(p.title+' '+p.measure+' '+p.subtitle).includes(norm(search)));
  const groups=categories.map(c=>({key:c,items:visible.filter(p=>p.category===c)})).filter(g=>g.items.length);
- const promos=items.filter(p=>p.enabled&&p.featured);
  return <div className="app">
    <IndustrialBar/>
    <header className="header"><div className="wrap head-inner">
@@ -129,34 +173,26 @@ export default function Store({admin=false}:{admin?:boolean}){
      {!configured?<section className="panel"><h2>Conectar base de datos</h2><p>{getDbConfigIssue()||"La conexión con Supabase no está lista. Comprobá el último despliegue Production en Vercel."} Revisá las variables del proyecto y verificá que el despliegue más reciente figure como Ready.</p></section>:
      checking?<section className="panel">Verificando acceso...</section>:
      !authorized?<section className="login-card panel"><span className="overline">SOLO PERSONAL AUTORIZADO</span><h2>Ingresá a tu cuenta</h2><p>El catálogo es público. Esta sección es privada.</p><form onSubmit={login}><label>Correo electrónico<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username" placeholder="tu@correo.com"/></label><label>Contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="current-password" placeholder="Tu contraseña"/></label><button className="btn red" disabled={busy} type="submit">{busy?'Ingresando...':'Ingresar al superadmin →'}</button></form></section>:
-     <div className="admin-content"><div className="admin-summary"><div><strong>{items.length}</strong><span>Presentaciones</span></div><div><strong>{items.filter(x=>x.featured).length}</strong><span>Promociones</span></div><div><strong>{items.filter(x=>x.enabled).length}</strong><span>Publicadas</span></div><button className="btn dark" onClick={()=>void logout()}>Cerrar sesión</button></div>
+     <div className="admin-content"><div className="admin-summary"><div><strong>{items.length}</strong><span>Presentaciones</span></div><div><strong>{categories.length}</strong><span>Líneas de producto</span></div><div><strong>{items.filter(x=>x.enabled).length}</strong><span>Publicadas</span></div><button className="btn dark" onClick={()=>void logout()}>Cerrar sesión</button></div>
        <Campaigns admin products={items}/><section className="panel qr-panel"><div><span className="overline">TU QR DEFINITIVO</span><h2>Un solo QR, siempre los últimos precios.</h2><p>Generalo con el dominio público de producción. El QR no cambia cuando actualizás tus precios.</p><label>Dirección definitiva del catálogo<input value={qrUrl} onChange={e=>setQrUrl(e.target.value)} placeholder="https://tu-dominio.com/"/></label><button className="btn green" onClick={()=>void createQR()}>Generar QR</button></div>{qr&&<div className="qr-result"><img src={qr} alt="QR de Mitobicel"/><a download="mitobicel-qr-catalogo.png" href={qr} className="btn dark">Descargar PNG</a></div>}</section>
-       <section className="panel"><div className="section-top"><div><span className="overline">EDICIÓN RÁPIDA</span><h2>Precios y presentaciones</h2><p>Guardá cada fila para actualizar el precio público. También podés subir fotos de cada línea desde acá.</p></div></div>
-       {categories.map(c=><div key={c} className="admin-category"><div className="category-admin-header"><div><h3>{categoryLabel(c)}</h3><p>Imagen para todas las medidas de esta categoría</p></div><div className="category-upload"><label className="btn white upload-control"><Icon name="upload"/> Elegir imagen<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{void uploadCategoryImage(c,e.target.files?.[0]);e.currentTarget.value='';}}/></label>{items.some(p=>p.category===c&&p.image_url)&&<button type="button" className="btn subtle" disabled={busy} onClick={()=>void removeCategoryImage(c)}>Quitar imagen</button>}</div></div>{items.filter(p=>p.category===c).map(p=><div key={p.id} className="edit-row"><div className="edit-fields">
+       <section className="panel"><div className="section-top"><div><span className="overline">EDICIÓN RÁPIDA</span><h2>Precios y presentaciones</h2><p>Los cambios se conservan mientras editás, aunque se actualice el catálogo. Guardá cada fila para publicar y confirmar los datos en Supabase. Las ofertas semanales se administran arriba en «Promociones y contenido de fábrica».</p></div></div>
+       {categories.map(c=><div key={c} className="admin-category"><div className="category-admin-header"><div><h3>{categoryLabel(c)}</h3><p>Imagen para todas las medidas de esta categoría</p></div><div className="category-upload"><label className="btn white upload-control"><Icon name="upload"/> Elegir imagen<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{void uploadCategoryImage(c,e.target.files?.[0]);e.currentTarget.value='';}}/></label>{items.some(p=>p.category===c&&p.image_url)&&<button type="button" className="btn subtle" disabled={busy} onClick={()=>void removeCategoryImage(c)}>Quitar imagen</button>}</div></div>{items.filter(p=>p.category===c).map(p=><div key={p.id} className={"edit-row"+(dirtyItems.current.has(p.id)?" edit-row-dirty":"")}><div className="edit-fields">
          <label>Producto<input value={p.title} onChange={e=>patch(p.id,'title',e.target.value)}/></label><label>Subtítulo<input value={p.subtitle} onChange={e=>patch(p.id,'subtitle',e.target.value)}/></label><label>Presentación<input value={p.presentation} onChange={e=>patch(p.id,'presentation',e.target.value)}/></label><label>Medida<input value={p.measure} onChange={e=>patch(p.id,'measure',e.target.value)}/></label>
-         <label>Retiro por fábrica $<input inputMode="numeric" type="number" min="0" value={p.price_pickup??''} onChange={e=>patch(p.id,'price_pickup',num(e.target.value))} placeholder="Sin cargar"/></label>
-         <label>Con envío $<input inputMode="numeric" type="number" min="0" value={p.price_delivery??''} onChange={e=>patch(p.id,'price_delivery',num(e.target.value))} placeholder="Sin cargar"/></label>
+         <label>Retiro por fábrica $<input inputMode="decimal" type="number" min="0" step="0.01" value={p.price_pickup??''} onChange={e=>patch(p.id,'price_pickup',num(e.target.value))} placeholder="Sin cargar"/></label>
+         <label>Con envío $<input inputMode="decimal" type="number" min="0" step="0.01" value={p.price_delivery??''} onChange={e=>patch(p.id,'price_delivery',num(e.target.value))} placeholder="Sin cargar"/></label>
          <label>{p.category==='arranque'?'Rollos/bulto':'Paquetes/bulto'}<input type="number" min="0" value={p.packages??''} onChange={e=>patch(p.id,'packages',num(e.target.value))}/></label>
          <label>Bolsas/rollito<input type="number" min="0" value={p.bags_per_roll??''} onChange={e=>patch(p.id,'bags_per_roll',num(e.target.value))}/></label>
          <label>Unid./caja<input type="number" min="0" value={p.units_per_box??''} onChange={e=>patch(p.id,'units_per_box',num(e.target.value))}/></label>
-       </div><div className="edit-actions"><label><input type="checkbox" checked={p.featured} onChange={e=>patch(p.id,'featured',e.target.checked)}/> Promoción</label><label><input type="checkbox" checked={p.enabled} onChange={e=>patch(p.id,'enabled',e.target.checked)}/> Visible</label><button disabled={busy} className="btn green" onClick={()=>void save(p)}>Guardar medida</button></div></div>)}</div>)}
+       </div><div className="edit-actions"><label><input type="checkbox" checked={p.enabled} onChange={e=>patch(p.id,'enabled',e.target.checked)}/> Visible</label><span className={"edit-status"+(dirtyItems.current.has(p.id)?" unsaved":"")}>{dirtyItems.current.has(p.id)?"● Cambios sin guardar":"✓ Sin cambios pendientes"}</span><button type="button" disabled={busy} className="btn green" onClick={()=>void save(p)}>{busy?"Guardando...":"Guardar medida"}</button></div></div>)}</div>)}
        <div className="add-row"><label>Categoría<select value={newCategory} onChange={e=>setNewCategory(e.target.value)}>{categories.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}</select></label><label>Nueva medida<input placeholder="Ej. 50 × 70" value={newSize} onChange={e=>setNewSize(e.target.value)}/></label><button className="btn dark" onClick={()=>void addMeasure()} disabled={busy||!newSize.trim()}>+ Agregar medida</button></div></section>
        <p className="admin-note">Por seguridad, solo los usuarios cargados en la tabla <code>admin_users</code> pueden modificar datos. Nunca publiques claves privadas en GitHub.</p>
      </div>}
      {message&&<p role="status" className="toast">{message}</p>}
    </main>:<main>
-      <section className="hero wrap"><div className="hero-left"><div className="eyebrow hero-pill"><span className="live-dot"/> FÁBRICA DIRECTA DE POLIETILENO · SIN INTERMEDIARIOS</div><h1>Calidad que se nota.<br/><em>Precio que conviene.</em></h1><p className="lead">Fabricando calidad al mejor precio hace más de <strong>15 años.</strong> Fabricantes directos, sin intermediarios, para negocios de todo el país.</p><div className="hero-buttons"><a className="btn red" href="#productos">VER CATÁLOGO Y PRECIOS DE FÁBRICA <span>↓</span></a><a className="btn green hero-whatsapp" href={whatsapp('Hola, quiero consultar por el catálogo mayorista de MITOBICEL')} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> PEDIR LISTA MAYORISTA POR WHATSAPP ↗</a></div><div className="hero-social"><span className="hero-stars" aria-hidden="true">★★★★★</span><span>Atención directa a papeleras y distribuidores de todo el país</span></div><div className="hero-stats"><div><small>DESDE</small><b>50 <i>bultos</i></b><span>Pedido mínimo</span></div><div><small>ORIGEN</small><b>100%</b><span>Directo de fábrica</span></div><div><small>CATÁLOGO</small><b>5 <i>líneas</i></b><span>Productos mayoristas</span></div></div></div><div className="hero-right"><div className="hero-image-label">VISITANOS EN FÁBRICA</div><FactoryPhoto/><div className="factory-location"><div><strong>📍 Av. San Martín 249, Burzaco</strong><small>Vení a conocer la fábrica y probar nuestra calidad.</small></div><a className="factory-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=Avenida+San+Martin+249+Burzaco+Buenos+Aires">📍 ABRIR EN GOOGLE MAPS ↗</a></div></div></section>
+      <section className="hero wrap"><div className="hero-left"><div className="eyebrow hero-pill"><span className="live-dot"/> FÁBRICA DIRECTA DE POLIETILENO · SIN INTERMEDIARIOS</div><h1>Calidad que se nota.<br/><em>Precio que conviene.</em></h1><p className="lead">Fabricando calidad al mejor precio hace más de <strong>15 años.</strong> Fabricantes directos, sin intermediarios, para negocios de todo el país.</p><div className="hero-buttons"><a className="btn red" href="#productos">VER CATÁLOGO Y PRECIOS DE FÁBRICA <span>↓</span></a></div><SocialProof placement="hero"/><div className="hero-stats"><div><small>DESDE</small><b>50 <i>bultos</i></b><span>Pedido mínimo</span></div><div><small>ORIGEN</small><b>100%</b><span>Directo de fábrica</span></div><div><small>CATÁLOGO</small><b>5 <i>líneas</i></b><span>Productos mayoristas</span></div></div></div><div className="hero-right"><div className="hero-image-label">VISITANOS EN FÁBRICA</div><FactoryPhoto/><div className="factory-location"><div><strong>📍 Av. San Martín 249, Burzaco</strong><small>Vení a conocer la fábrica y probar nuestra calidad.</small></div><a className="factory-map" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=Avenida+San+Martin+249+Burzaco+Buenos+Aires">📍 ABRIR EN GOOGLE MAPS ↗</a></div></div></section>
       <div className="trust-strip"><div className="wrap trust-grid"><div><span><Icon name="factory"/></span><b>Fabricante directo</b><small>Sin intermediarios</small></div><div><span><Icon name="award"/></span><b>Calidad premium</b><small>Precios competitivos</small></div><div><span><Icon name="package"/></span><b>Retiro por fábrica</b><small>Conocé nuestros productos</small></div><div><span><Icon name="truck"/></span><b>Envíos</b><small>Desde 100 bultos</small></div></div></div>
       <Campaigns products={items} onAdd={addOrder}/>
       {!configured&&<div className="wrap"><p className="demo-note">Catálogo en modo demostración. {getDbConfigIssue()||"No se pudo inicializar Supabase. Revisá el último despliegue en Vercel."}</p></div>}
-      {promos.length>0&&<section className="wrap section promotion-section" id="promociones">
-       <div className="section-top"><div><span className="overline">PRECIOS ESPECIALES DIRECTO DE FÁBRICA</span><h2><em>Promociones</em> semanales</h2><p>Precios vigentes para pedidos mayoristas. Consultá stock y condiciones.</p></div></div>
-       <div className="promo-list">{promos.map(p=><article key={p.id} className="promo-card"><span className="promo-glow"/><div className="promo-picture">{p.image_url?<img src={p.image_url} alt={p.title}/>:<Icon name="film"/>}</div>
-       <div className="promo-body"><span className="promo-tag">🔥 OFERTA SEMANAL · PRECIO DE FÁBRICA</span><h3>{p.title}</h3><p>{p.subtitle}</p><strong className="promo-measure">{p.measure} · {p.units_per_box?'Caja x '+p.units_per_box+' unidades':p.presentation}</strong></div>
-       <div className="promo-prices"><small>RETIRANDO POR FÁBRICA</small><strong>{money(p.price_pickup)}</strong><small>CON ENVÍO</small><b>{money(p.price_delivery)}</b></div>
-       <div className="promo-actions"><a className="btn white" target="_blank" rel="noopener noreferrer" href={whatsapp('Hola MITOBICEL, quiero consultar la promoción '+p.title+' '+p.measure)}><Icon name="whatsapp"/> Pedir promoción ↗</a><button type="button" className="btn promo-cart" onClick={()=>addOrder({key:p.id,title:p.title,detail:p.measure+' · '+(p.units_per_box?'caja por '+p.units_per_box+' unidades':p.presentation),quantity:1,unit:p.presentation.toLowerCase().includes('caja')?'caja':'bulto',pricePickup:p.price_pickup,priceDelivery:p.price_delivery})}>+ Agregar al pedido</button></div>
-       </article>)}</div>
-      </section>}
       <section className="wrap section" id="productos"><div className="section-top"><div><span className="overline">CATÁLOGO MAYORISTA ACTUALIZADO</span><h2>Todo lo que tu <em>negocio necesita.</em></h2><p>Consultá el precio para retirar por fábrica o recibir en tu local.</p></div></div><div className="filters"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="⌕  Buscar producto o medida..." aria-label="Buscar productos o medidas"/></div>
        <div className="product-grid masonry-grid">{[0,1].map(column=><div className="masonry-column" key={column}>{groups.filter((_,i)=>i%2===column).map(g=><article key={g.key} className="product-card"><div className="product-head"><div className="product-title-area"><div className="product-picture">{g.items.find(p=>p.image_url)?.image_url?<img src={g.items.find(p=>p.image_url)?.image_url||''} alt={g.items[0].title}/>:<Icon name={g.key==='camiseta'?'shopping-bag':g.key==='residuos'?'trash':g.key==='folex'?'layers':g.key==='munsmawa'?'film':'package'}/>}</div><div><span className="overline">DIRECTO DE NUESTRA FÁBRICA</span><h3>{g.items[0].title}</h3><p>{g.items[0].subtitle}</p></div></div><span className="sku-count">{g.items.length} MEDIDAS</span></div><div className="table-scroller"><table><thead><tr><th>MEDIDA</th><th>PRESENTACIÓN</th><th>RETIRO FÁBRICA</th><th>CON ENVÍO</th><th>ACCIÓN</th></tr></thead><tbody>{g.items.map(p=><tr key={p.id}>
 <td className="size" data-label="Medida">{p.measure}</td>
@@ -166,12 +202,17 @@ export default function Store({admin=false}:{admin?:boolean}){
 <td className="add-cell"><button type="button" className="add-product" onClick={()=>addOrder({key:p.id,title:p.title,detail:p.measure+' · '+(p.packages!==null?p.packages+(p.category==='arranque'?' rollos/bulto':' paquetes/bulto'):p.units_per_box!==null?'Caja x '+p.units_per_box:p.presentation),quantity:1,unit:p.presentation.toLowerCase().includes('caja')?'caja':'bulto',pricePickup:p.price_pickup,priceDelivery:p.price_delivery})}>+ Cotizar / Agregar</button></td>
 </tr>)}</tbody></table></div><div className="product-bottom"><span>{g.key==='camiseta'?'Más medidas disponibles hasta 80 × 100 cm.':g.key==='residuos'?'Fabricación propia · fondo estrella.':'Disponemos de más medidas.'}</span><a target="_blank" rel="noopener noreferrer" href={whatsapp('Hola, quiero consultar otras medidas de '+g.items[0].title)}><Icon name="whatsapp"/> Consultar más medidas por WhatsApp ↗</a></div></article>)}</div>)}{!groups.length&&<div className="empty">No encontramos productos con esa búsqueda.</div>}</div>
       </section>
-      <section className="wrap section" id="compra"><div className="buy-card"><span className="overline">COMPRA POR MAYOR · SIN INTERMEDIARIOS</span><h2>Comprá directo donde <em>se fabrica.</em></h2><div className="steps"><div><span>01</span><h3>Desde medio pallet</h3><p>Compra mínima de 50 bultos para acceder a nuestros mejores precios. No vendemos por menor.</p></div><div><span>02</span><h3>Retiro por fábrica</h3><p>Vení a Avenida San Martín 249, Burzaco. Podés conocer y probar la calidad antes de comprar.</p></div><div><span>03</span><h3>Envíos a todo el país</h3><p>Realizamos envíos desde 100 bultos. Consultá tu cotización por WhatsApp.</p></div></div><a className="btn red" target="_blank" rel="noopener noreferrer" href={whatsapp('Hola Mitobicel, quiero hacer un pedido mayorista')}><Icon name="whatsapp"/> Hacer mi pedido por WhatsApp ↗</a></div></section>
+      <section className="wrap section" id="compra"><div className="buy-card">
+        <span className="overline">TRES PASOS PARA TU PEDIDO MAYORISTA</span>
+        <h2>Elegís, cotizás <em>y coordinamos.</em></h2>
+        <div className="steps">
+          <div><span>01</span><h3>Seleccioná las medidas</h3><p>Agregá al pedido las presentaciones y cantidades que necesita tu negocio.</p></div>
+          <div><span>02</span><h3>Enviá la cotización</h3><p>Revisá tu carrito express y enviá todas las cantidades en un solo mensaje.</p></div>
+          <div><span>03</span><h3>Confirmá la operación</h3><p>Te respondemos con stock disponible, importe final, forma de pago y coordinación de entrega o retiro.</p></div>
+        </div><a className="btn red" href="#productos">Seleccionar productos ↑</a>
+      </div></section>
       <SocialQuestions/>
       <WholesaleFAQ/>
-      <section className="wrap assurance-section"><div className="section-top"><div><span className="overline">FABRICACIÓN Y ATENCIÓN MAYORISTA</span><h2>Respaldo directo de <em>MITOBICEL.</em></h2></div></div>
-      <div className="assurance-grid"><article><span>01</span><h3>Especificaciones transparentes</h3><p>Consultá micronaje, peso y características técnicas de cada presentación para elegir la bolsa correcta.</p></article><article><span>02</span><h3>Precio directo de extrusora</h3><p>Comprá al fabricante, sin intermediarios ni márgenes de reventa en el camino.</p></article><article><span>03</span><h3>Abastecimiento para papeleras</h3><p>Coordinamos producción, retiros y envíos según disponibilidad y volumen de tu pedido.</p></article></div>
-      </section>
       <footer className="site-footer"><div className="wrap footer-row">
        <div className="footer-identity"><a href="/" className="footer-brand" aria-label="Inicio MITOBICEL"><img src="/logo-mitobicel.png" alt="MITOBICEL"/></a><p>Fabricando calidad al mejor precio hace más de 15 años.</p><small>«El Señor es mi pastor; nada me faltará». — Salmos 23:1</small></div>
        <div className="footer-details"><strong>Fábrica y atención</strong><p>Avenida San Martín 249, Burzaco, Buenos Aires.</p><p>Lunes a viernes: 8:30–13 y 13:30–17 h<br/>Sábados: 8:30–13 h</p><a href="https://www.google.com/maps/search/?api=1&query=Avenida+San+Martin+249+Burzaco+Buenos+Aires" target="_blank" rel="noopener noreferrer">Cómo llegar ↗</a></div>

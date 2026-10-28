@@ -6,11 +6,11 @@ const wa=(s:string)=>'https://wa.me/541162190702?text='+encodeURIComponent(s);
 type Review={text:string;city:string;verified:boolean};
 const sample=['¿Tienen bolsas camiseta 40 × 50 por medio pallet?','¿Puedo visitar la fábrica y probar la calidad de las bolsas?','¿Cómo cotizo film verdulero y bolsas de arranque juntos?'];
 const qs=[
- {q:'¿Cuál es el mínimo de compra mayorista y cómo se vende?',a:'La compra mínima es de medio pallet: 50 bultos. Trabajamos exclusivamente por mayor; podés combinar presentaciones según disponibilidad. Los precios para retiro y envío se consultan en el catálogo o por WhatsApp.'},
- {q:'¿Puedo retirar directamente por la fábrica en Av. San Martín 249, Burzaco?',a:'Sí. Podés acercarte a conocer nuestros productos y conversar con el equipo antes de comprar. Para coordinar tu visita y confirmar horarios, escribinos por WhatsApp.'},
- {q:'¿Hacen envíos a papeleras y distribuidoras de Zona Sur, GBA y CABA?',a:'Sí, realizamos envíos a comercios y distribuidores desde 100 bultos, sujetos a la coordinación y disponibilidad del pedido. También atendemos envíos al resto del país.'},
- {q:'¿Cómo solicito la lista de precios actualizada por volumen?',a:'Consultá las presentaciones de este catálogo, agregá medidas al pedido express y enviá el listado completo a nuestro WhatsApp. Te confirmamos el precio vigente según cantidad y modalidad de entrega.'}
-];
+ {q:'¿Cómo hago mi pedido y cómo se coordina la entrega o el retiro?',a:'Elegí las medidas en el catálogo o mandanos el detalle por WhatsApp. Confirmamos stock, precio final y fecha para retirar en planta o coordinar el envío.'},
+ {q:'¿Venden únicamente por bulto cerrado o se pueden armar pedidos surtidos?',a:'Trabajamos por bulto cerrado, pero podés combinar distintas líneas y medidas —camiseta, arranque, fondo estrella, Folex y film— en un pedido mayorista. Mínimo: 50 bultos.'},
+ {q:'¿Qué medios de pago aceptan para compras mayoristas?',a:'Los medios de pago y datos de cobro se confirman con nuestro equipo por WhatsApp antes de cerrar la operación. No realices transferencias sin validar los datos de la compra.'},
+ {q:'¿Las bolsas mantienen el mismo micronaje y resistencia entre partidas?',a:'Fabricamos mediante extrusión y confección propia. Consultanos el micronaje, peso y las especificaciones de la presentación que necesitás; si requerís una resistencia particular, la confirmamos antes de producir o despachar.'}
+]
 export function DirectComparison(){
  return <section className="contrast-section" id="por-que-fabrica"><div className="wrap">
   <div className="contrast-intro"><span className="overline">TU MARGEN IMPORTA</span><h2>Menos intermediarios.<br/><em>Más control de tu compra.</em></h2><p>Conocé la diferencia entre comprar por reventa y tratar directamente con el fabricante.</p></div>
@@ -41,7 +41,7 @@ export function SocialQuestions(){
 }
 export function WholesaleFAQ(){
  const [expanded,setExpanded]=useState<number|null>(0);
- return <section className="wrap faq-section" id="preguntas-frecuentes"><div className="faq-heading"><span className="overline">INFORMACIÓN PARA TU COMPRA</span><h2>Preguntas que <em>resolvemos siempre.</em></h2><p>Todo lo importante para empezar a trabajar directamente con la fábrica.</p></div>
+ return <section className="wrap faq-section" id="preguntas-frecuentes"><div className="faq-heading"><span className="overline">INFORMACIÓN PARA TU COMPRA</span><h2>Preguntas que <em>recibimos siempre.</em></h2><p>Todo lo importante para empezar a trabajar directamente con la fábrica.</p></div>
   <div className="faq-accordions">{qs.map((item,i)=><div className={'faq-item'+(expanded===i?' active':'')} key={i}><button type="button" onClick={()=>setExpanded(v=>v===i?null:i)} aria-expanded={expanded===i} aria-controls={'faq-answer-'+i}><span>{item.q}</span><span className="faq-icon">{expanded===i?'−':'+'}</span></button>{expanded===i&&<div className="faq-answer" id={'faq-answer-'+i}><p>{item.a}</p></div>}</div>)}</div>
   <div className="faq-cta"><span>¿Tenés otra consulta sobre precios o presentaciones?</span><a href={wa('Hola MITOBICEL, tengo una consulta sobre sus productos mayoristas')} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> Hablemos por WhatsApp ↗</a></div>
  </section>;

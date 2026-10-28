@@ -4,6 +4,7 @@ import {getDb} from '@/lib/client';
 import type {OrderLine} from '@/lib/order';
 import {Icon} from '@/components/Visuals';
 import {DirectComparison} from '@/components/Conversion';
+import SocialProof from '@/components/SocialProof';
 import {Upload} from 'tus-js-client';
 
 type Product={id:string;title:string;measure:string;presentation?:string;enabled:boolean;image_url?:string|null};
@@ -143,7 +144,7 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
  }
  const video=videoSource(settings.factory_video_url);
  const poster=(()=>{try{const u=new URL(settings.factory_video_poster);return u.protocol==='https:'?u.toString():'';}catch{return '';}})();
- const approved=settings.proof_verified==='true' && !!settings.proof_count && !!settings.proof_rating;
+ 
  if(admin)return <section className="panel campaign-admin" id="marketing">
   <span className="overline">GESTIÓN COMERCIAL</span><h2>Promociones y contenido de fábrica</h2>
   <p>Podés publicar una oferta de un solo producto o combinar dos. Todas las cifras son editables; no es necesario volver a publicar la web.</p>
@@ -219,15 +220,10 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
    </div>
    <div className="vsl-chapters" role="tablist" aria-label="Etapas de la fábrica">{chapters.map((c,i)=><button key={i} type="button" className={'vsl-chapter'+(chapter===i?' selected':'')} role="tab" aria-selected={chapter===i} onClick={()=>setChapter(i)}><span>{String(i+1).padStart(2,'0')}</span><strong>{c.title}</strong></button>)}</div><div className="vsl-chapter-detail" role="tabpanel"><span className="chapter-kicker">ETAPA {String(chapter+1).padStart(2,'0')}</span><p>{chapters[chapter].detail}</p></div>
   </section>
-  <section className="social-panel wrap">
-   <div className="social-stars" aria-label="Cinco estrellas decorativas">★★★★★</div>
-   {approved?<div className="social-number"><strong>{Number(settings.proof_rating).toFixed(1)}/5</strong><span>Más de {Number(settings.proof_count).toLocaleString('es-AR')} papeleras y distribuidores siguen confiando en MITOBICEL</span></div>
-   :<div className="social-number"><strong>Confianza mayorista</strong><span>{settings.social_proof_text}</span></div>}
-   <div className="social-avatars" aria-hidden="true"><span>🏪</span><span>📦</span><span>🏭</span></div>
-  </section>
+  <SocialProof placement="video"/>
   <DirectComparison/>
-  {offerReady&&offers.some(o=>o.active)&&<section className="wrap offer-section" id="combos">
-   <div className="section-top"><div><span className="overline">EXCLUSIVO PARA COMPRAS MAYORISTAS</span><h2>Ofertas que <em>rinden más.</em></h2><p>Combos especiales, cantidades claras y precios directos de fábrica.</p></div></div>
+  {offerReady&&offers.some(o=>o.active)&&<section className="wrap offer-section" id="promociones">
+   <div className="section-top"><div><span className="weekly-promo-badge">🔥 PROMOCIONES SEMANALES · DIRECTO DE FÁBRICA</span><h2>Ofertas que <em>rinden más.</em></h2><p>Elegí las presentaciones y consultá las condiciones vigentes de la promoción.</p></div></div>
    <div className="offers-grid">{offers.filter(o=>o.active).map(o=>{
     const total=comboTotal(o,'pickup'),delivery=comboTotal(o,'delivery'),before=price(o.price_old,o);
     const showOld=before!==null&&total!==null&&before>total;
