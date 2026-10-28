@@ -39,7 +39,6 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
  const [ready,setReady]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState(''),[videoStarted,setVideoStarted]=useState(false),[uploadProgress,setUploadProgress]=useState<number|null>(null);
  const [offerReady,setOfferReady]=useState(true);
  const [chapter,setChapter]=useState(0);
- const [vslAspect,setVslAspect]=useState<number|null>(null);
  const chapters=[{title:'EXTRUSIÓN Y MATERIA PRIMA',detail:'El proceso de fabricación comienza con la selección de materiales y la extrusión del polietileno según cada presentación.'},{title:'SELLADO Y CONFECCIÓN',detail:'Conocé cómo trabajamos el sellado, los fuelles y el fondo estrella para cada tipo de bolsa.'},{title:'ABASTECIMIENTO MAYORISTA',detail:'Consultá presentaciones disponibles, stock y condiciones para retiro por fábrica o envío a tu local.'}];
  const load=useCallback(async()=>{
   const db=getDb();if(!db)return;
@@ -143,29 +142,6 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
   }finally{setSaving(false);setUploadProgress(null);}
  }
  const video=videoSource(settings.factory_video_url);
- // La miniatura también respeta la orientación: 9:16 provisional para MP4,
- // ajustando la proporción exacta al leer los metadatos sin descargar todo el archivo.
- useEffect(()=>{
-  setVslAspect(null);
-  const media=videoSource(settings.factory_video_url);
-  if(!media||media.type!=='mp4')return;
-  const probe=document.createElement('video');
-  probe.preload='metadata';
-  probe.muted=true;
-  probe.onloadedmetadata=()=>{
-   if(probe.videoWidth>0&&probe.videoHeight>0){
-    setVslAspect(probe.videoWidth/probe.videoHeight);
-   }
-  };
-  probe.src=media.src;
-  return ()=>{
-   probe.onloadedmetadata=null;
-   probe.removeAttribute('src');
-   probe.load();
-  };
- },[settings.factory_video_url]);
- const frameAspect=vslAspect??(video?.type==='mp4'?9/16:16/9);
- const portraitVideo=frameAspect<0.9;
  const poster=(()=>{try{const u=new URL(settings.factory_video_poster);return u.protocol==='https:'?u.toString():'';}catch{return '';}})();
  const approved=settings.proof_verified==='true' && !!settings.proof_count && !!settings.proof_rating;
  if(admin)return <section className="panel campaign-admin" id="marketing">
@@ -232,12 +208,12 @@ export default function Campaigns({admin=false,products=[],onAdd}:{
  return <>
   <section className="vsl-section wrap" id="fabrica">
    <div className="vsl-intro"><span className="overline">RECORRIDO POR NUESTRA PLANTA EN BURZACO</span><h2>{settings.video_title==='Calidad que podés ver en vivo antes de hacer tu pedido'?<>Calidad que podés ver <em>en vivo antes de hacer tu pedido.</em></>:settings.video_title}</h2><p>{settings.video_caption}</p></div>
-   <div className={"vsl-shell"+(portraitVideo?" vsl-portrait":" vsl-landscape")}>
+   <div className="vsl-shell">
     <div className="vsl-topline"><span className="vsl-source"><span className="vsl-dot"/> PLANTA BURZACO · EXTRUSIÓN PROPIA</span><span className="vsl-audio">♫ AUDIO DISPONIBLE</span></div>
-    <div className="vsl-screen" style={{aspectRatio:String(frameAspect)}}>
+    <div className="vsl-screen">
       {video ? (!videoStarted ?
         <button type="button" className="vsl-play" onClick={()=>setVideoStarted(true)} style={poster?{backgroundImage:'linear-gradient(#00190b55,#00190b55),url("'+poster+'")'}:{}} aria-label="Reproducir video de fábrica"><span className="vsl-play-circle">▶</span><strong>Reproducir video de la fábrica</strong></button>
-        :video.type==='mp4'?<video src={video.src} poster={poster||undefined} controls playsInline autoPlay preload="metadata" onLoadedMetadata={e=>{const el=e.currentTarget;if(el.videoWidth&&el.videoHeight)setVslAspect(el.videoWidth/el.videoHeight);}}/>:<iframe title="Recorrido por MITOBICEL" src={video.src+(video.src.includes('?')?'&':'?')+'autoplay=1'} allow="accelerometer; autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
+        :video.type==='mp4'?<video src={video.src} poster={poster||undefined} controls playsInline autoPlay preload="metadata"/>:<iframe title="Recorrido por MITOBICEL" src={video.src+(video.src.includes('?')?'&':'?')+'autoplay=1'} allow="accelerometer; autoplay; encrypted-media; picture-in-picture" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>
       ):<div className="vsl-empty"><span className="vsl-play-circle">▶</span><strong>Próximamente: recorrido por la planta</strong><small>En el superadmin se podrá publicar el video completo.</small></div>}
     </div>
    </div>
