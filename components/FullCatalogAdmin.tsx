@@ -5,7 +5,7 @@ import {Icon} from '@/components/Visuals';
 import seedData from '@/data/catalogo2.provincias.26-10.json';
 import {
  FULL_CATALOG_TABLE,FULL_CATALOG_PATH,FULL_CATALOG_ADMIN_PATH,
- itemPresentation,makeCategorySlug,formatCatalogPrice,correctLegacyUnpricedRow,type FullCatalogItem
+ itemPresentation,makeCategorySlug,formatCatalogPrice,isWholesalePresentation,resolveCatalog2Prices,correctLegacyUnpricedRow,type FullCatalogItem
 } from '@/lib/fullCatalog';
 
 const numberOrNull=(value:string)=>value.trim()===''?null:Number(value);
