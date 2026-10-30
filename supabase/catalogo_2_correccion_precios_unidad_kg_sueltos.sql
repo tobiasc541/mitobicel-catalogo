@@ -28,5 +28,21 @@ WHERE dest.id=correction.id
   AND dest.requires_quote=true
   AND dest.source_original_price=correction.original_price;
 
+
+-- Corrección de 4 tubos por unidad de venta, sin tocar precios editados.
+UPDATE public.catalog_full_items AS dest
+SET price_list=fix.correct_price, requires_quote=false
+FROM (VALUES
+('prov26-119',6500::numeric,2500::numeric),
+('prov26-121',6200::numeric,2200::numeric),
+('prov26-123',9250::numeric,5250::numeric),
+('prov26-125',9250::numeric,5250::numeric)
+) AS fix(id,correct_price,wrong_price)
+WHERE dest.id=fix.id
+ AND dest.currency='ARS'
+ AND dest.presentation ILIKE 'Tubo%'
+ AND dest.source_original_price=fix.correct_price
+ AND dest.price_list=fix.wrong_price;
+
 COMMIT;
 SELECT count(*) AS productos_con_precio_de_lista FROM public.catalog_full_items WHERE id LIKE 'prov26-%' AND price_list IS NOT NULL;

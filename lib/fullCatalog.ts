@@ -82,24 +82,21 @@ export const priceUnitLabel=(presentation:string)=>{
  return '';
 };
 
-// La versión inicial del Catálogo 2 omitió catorce importes chicos.
-// En caso de que Supabase conserve ese error (NULL/«A consultar»),
-// aplicar la corrección oficial solo cuando la fila no fue personalizada.
+// Corregir únicamente importes mal cargados en la versión anterior. Nunca
+// sobrescribir precios modificados en Superadmin.
 export const correctLegacyUnpricedRow=(remote:FullCatalogItem,official?:FullCatalogItem):FullCatalogItem=>{
- if(official&&
-  official.id===remote.id&&
-  official.currency==='ARS'&&
-  official.price_list!=null&&
-  official.price_list===official.source_original_price&&
-  official.source_original_price!=null&&
-  official.source_original_price<4000&&
-  remote.price_list==null&&
-  remote.requires_quote===true&&
-  remote.source_original_price===official.source_original_price&&
-  (remote.currency||'ARS')==='ARS'
- ){
-  return {...remote,price_list:official.price_list,requires_quote:false};
- }
+ if(!official||official.id!==remote.id||official.currency!=='ARS'||
+    (remote.currency||'ARS')!=='ARS'||
+    remote.source_original_price!==official.source_original_price||
+    official.price_list==null||official.price_list!==official.source_original_price)
+   return remote;
+ if(official.source_original_price!=null&&official.source_original_price<4000&&
+    remote.price_list==null&&remote.requires_quote===true)
+   return {...remote,price_list:official.price_list,requires_quote:false};
+ if(/^tubo\b/i.test(official.presentation.trim())&&
+    official.source_original_price!=null&&
+    remote.price_list===official.source_original_price-4000)
+   return {...remote,price_list:official.price_list,requires_quote:false};
  return remote;
 };
 

@@ -227,23 +227,27 @@ export default function FullCatalogAdmin(){
     if(batchError)throw batchError;
     setImportProgress(Math.round(++done/Math.max(1,operations)*100));
    }
-   // Actualizamos únicamente los 14 importes antiguos que estaban NULL,
-   // si siguen coincidiendo con el precio original del PDF. No se pisan
-   // ediciones posteriores del administrador.
+   // Correcciones selectivas de importaciones anteriores. Preservar
+   // los precios personalizados del administrador.
    for(const official of toCorrect){
-    const {data:updated,error:updateError}=await db.from(FULL_CATALOG_TABLE)
+    let request=db.from(FULL_CATALOG_TABLE)
      .update({price_list:official.price_list,requires_quote:false})
      .eq('id',official.id)
-     .eq('source_original_price',official.source_original_price!)
-     .eq('requires_quote',true).is('price_list',null)
-     .select('id');
+     .eq('currency','ARS')
+     .eq('source_original_price',official.source_original_price!);
+    if(/^tubo\b/i.test(official.presentation.trim())){
+     request=request.eq('price_list',official.source_original_price!-4000);
+    }else{
+     request=request.eq('requires_quote',true).is('price_list',null);
+    }
+    const {data:updated,error:updateError}=await request.select('id');
     if(updateError)throw updateError;
     corrected+=(updated||[]).length;
     setImportProgress(Math.round(++done/Math.max(1,operations)*100));
    }
    await load();
    setMessage(missing.length||corrected
-    ?'Sincronizadas '+missing.length+' presentaciones nuevas y corregidos '+corrected+' precios que estaban sin cargar. No se sobrescribieron precios personalizados.'
+    ?'Sincronizadas '+missing.length+' presentaciones nuevas y corregidos '+corrected+' precios con valores incorrectos anteriores. No se sobrescribieron precios personalizados.'
     :'El Catálogo 2 ya tiene sus 176 precios de lista sincronizados. No hubo cambios.');
   }catch(err){
    setMessage('No se pudo terminar la sincronización: '+(err instanceof Error?err.message:String(err))+'. Los datos ya guardados permanecen; podés reintentar.');
@@ -325,8 +329,8 @@ export default function FullCatalogAdmin(){
      <section className="panel catalog-2-import">
       <span className="overline">CATÁLOGO COMPLETO · LISTA PROVINCIAS 26/10</span>
       <h2>176 presentaciones preparadas con precios de lista</h2>
-      <p>144 presentaciones mayoristas con $4.000 de descuento; 14 precios por kilo, unidad o paquete suelto conservados tal como figuran en el PDF; 18 precios en USD sin convertir. Las 176 variantes tienen precio de lista.</p>
-      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>incorpora registros faltantes y corrige los antiguos precios vacíos</strong>, sin sobrescribir importes que ya modificaste.</p>
+      <p>140 presentaciones por bulto, atado o caja con $4.000 de descuento; 18 precios por tubo, kilo, unidad o paquete suelto sin descuento; 18 precios en USD sin convertir. Las 176 variantes tienen precio de lista.</p>
+      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>incorpora registros faltantes y corrige antiguos precios vacíos o descuentos aplicados erróneamente a tubos</strong>, sin sobrescribir importes que ya modificaste.</p>
       <button className="btn green" type="button" disabled={saving||!!error||(syncedCount>=176&&unpricedLegacyCount===0)} onClick={()=>void importPreparedCatalog()}>
        {saving&&importProgress!==null?'Sincronizando '+importProgress+'%':syncedCount>=176&&unpricedLegacyCount===0?'176 productos con precios sincronizados ✓':'Sincronizar Catálogo 2'+(unpricedLegacyCount?' · corregir '+unpricedLegacyCount+' precios':'')}
       </button>

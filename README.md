@@ -146,7 +146,7 @@ La dirección **/** permanece sin cambios; no modificar el QR ya impreso ni el c
 
 El Catálogo 1 / con QR no cambia. La lista completa está en **data/catalogo2.provincias.26-10.json** como fuente estática de respaldo. La página /catalogo-clientes muestra las 176 variantes aunque todavía no se haya creado la tabla Supabase. Cuando catalog_full_items contiene una fila con el mismo ID prov26-***, la versión editada desde admin prevalece.
 
-Los precios de lista ARS iguales o mayores a 4.000 recibieron un descuento fijo de ARS 4.000 (**144** importes). Los **14** precios ARS por kilo, unidad o paquete suelto (inferiores a $4.000) se conservan exactamente como aparecen en el PDF, sin descuento. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list almacena el valor visible; price_pickup y price_delivery quedan vacíos porque el PDF no indica retiro o envío.
+Los precios de lista en ARS vendidos por bulto, caja o atado mayorista recibieron un descuento fijo de ARS 4.000 (**140** importes), independientemente de su importe original. Los **18** precios ARS por tubo, kilo, unidad o paquete suelto se conservan exactamente como aparecen en el PDF, sin descuento. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list almacena el valor visible; price_pickup y price_delivery quedan vacíos porque el PDF no indica retiro o envío.
 
 Para instalar en Supabase MITOBICEL: ejecutar **supabase/catalogo_2_setup_y_carga.sql** una sola vez en SQL Editor. Crea tabla y columnas y carga 176 artículos con ON CONFLICT DO NOTHING sin borrar ediciones previas ni tocar catalog_items. Alternativamente ejecutar supabase/catalogo_2.sql y luego presionar Importar productos faltantes a Supabase desde /admin/catalogo-2.
 
@@ -161,3 +161,10 @@ El proyecto Supabase MITOBICEL no figura entre los proyectos conectados a ChatGP
 - En páginas 80-81, los carteles estallidos por paquete suelto de 10/20 unidades conservan su precio original. Los atados de 10 paquetes por bulto siguen con $4.000 descontados.
 - En páginas 58 y 75, cinta confitera por unidad y paquete de bolsas de escombro también conservan el precio suelto original.
 - `supabase/catalogo_2_correccion_precios_unidad_kg_sueltos.sql` corrige exclusivamente las 14 filas importadas antes como precio NULL y solo si no fueron modificadas; el superadmin incorpora el mismo ajuste con el botón de sincronización.
+
+### Política de precio según presentación (30/10/2026)
+- Precios ARS **bulto, caja y atado mayorista**: descontar $4.000 del importe del PDF.
+- Precios ARS **tubo x6, unidad suelta, paquete suelto, por kilo**: conservar el importe original, incluso si supera $4.000.
+- Valores USD: conservar el importe y moneda originales sin restar pesos.
+- Cuatro correcciones en las páginas 59-62: tubos 48 mm × 80 m a $6.500 y $6.200, tubos 48 mm × 100 m a $9.250 y $9.250.
+- La reparación de registros anteriores en Supabase es selectiva: solo corrige el valor erróneo exacto y respeta las modificaciones manuales.

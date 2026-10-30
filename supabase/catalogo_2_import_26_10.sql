@@ -1,6 +1,6 @@
 -- MITOBICEL Catálogo 2 · Lista Provincias 26-10-2026 · 176 presentaciones
 -- Unicamente catalog_full_items. NO modificar catálogo público del QR.
--- ARS: 144 precios mayoristas por presentacion -$4.000; 14 precios por kilo/unidad/paquete se mantienen originales.
+-- ARS: 140 precios por bulto/caja/atado con descuento de $4.000; 18 precios por tubo/kg/unidad/paquete suelto sin descuento.
 -- USD: 18 precios se preservan sin conversion.
 -- Ingreso idempotente; precios personalizados no son sobrescritos.
 BEGIN;
@@ -123,13 +123,13 @@ INSERT INTO public.catalog_full_items (id,category,title,subtitle,measure,presen
 ('prov26-116','cat2-31-etiquetas-autoadhesivas-top','Etiquetas autoadhesivas TOP','ROLLOS TÉRMICOS, OBRA, QUÍMICO Y ETIQUETAS','55×44','Bulto · 80 rollos/bulto',NULL,NULL,NULL,NULL,NULL,75.42,'USD',75.42,57,false,false,true,NULL,116),
 ('prov26-117','cat2-32-cinta-confitera-cristal','Cinta confitera cristal','CINTAS DE EMBALAR Y CONFITERA','24 mm × 50 mts','Unidad · color cristal',NULL,NULL,NULL,NULL,NULL,365,'ARS',365,58,false,false,true,NULL,117),
 ('prov26-118','cat2-32-cinta-confitera-cristal','Cinta confitera cristal','CINTAS DE EMBALAR Y CONFITERA','24 mm × 50 mts','Bulto · 72 unidades/bulto · color cristal',NULL,NULL,NULL,NULL,NULL,23950,'ARS',27950,58,false,false,true,NULL,118),
-('prov26-119','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,2500,'ARS',6500,59,false,false,true,NULL,119),
+('prov26-119','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,6500,'ARS',6500,59,false,false,true,NULL,119),
 ('prov26-120','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Bulto · 36 unidades/bulto',NULL,NULL,NULL,NULL,NULL,35000,'ARS',39000,59,false,false,true,NULL,120),
-('prov26-121','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,2200,'ARS',6200,60,false,false,true,NULL,121),
+('prov26-121','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,6200,'ARS',6200,60,false,false,true,NULL,121),
 ('prov26-122','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Bulto · 72 unidades/bulto',NULL,NULL,NULL,NULL,NULL,70000,'ARS',74000,60,false,false,true,NULL,122),
-('prov26-123','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,5250,'ARS',9250,61,false,false,true,NULL,123),
+('prov26-123','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,9250,'ARS',9250,61,false,false,true,NULL,123),
 ('prov26-124','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Bulto · 36 unidades/bulto',NULL,NULL,NULL,NULL,NULL,51400,'ARS',55400,61,false,false,true,NULL,124),
-('prov26-125','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,5250,'ARS',9250,62,false,false,true,NULL,125),
+('prov26-125','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,9250,'ARS',9250,62,false,false,true,NULL,125),
 ('prov26-126','cat2-34-cinta-de-embalar-cristal-48-mm-100-mts','Cinta de embalar cristal · 48 mm × 100 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 100 mts','Bulto · 72 unidades/bulto',NULL,NULL,NULL,NULL,NULL,102800,'ARS',106800,62,false,false,true,NULL,126),
 ('prov26-127','cat2-35-mtc-stretch-virgen-sin-mango-linea-liviana-cristal-y','MTC stretch virgen sin mango, línea liviana (cristal y negro)','STRETCH FILM','50 cm','Precio por kg · 4 unidades/bulto · 13,6 kg aprox./bulto',NULL,NULL,NULL,NULL,NULL,2.53,'USD',2.53,63,false,false,true,NULL,127),
 ('prov26-128','cat2-36-stretch-virgen-para-embalar-10-cm-cristal','Stretch virgen para embalar 10 cm · cristal','STRETCH FILM','10 cm','Bulto · 45 unidades/bulto',NULL,NULL,NULL,NULL,NULL,48.59,'USD',48.59,64,false,false,true,NULL,128),
@@ -208,6 +208,22 @@ WHERE dest.id=correction.id
   AND dest.price_list IS NULL
   AND dest.requires_quote=true
   AND dest.source_original_price=correction.original_price;
+
+
+-- Corrección de 4 tubos por unidad de venta, sin tocar precios editados.
+UPDATE public.catalog_full_items AS dest
+SET price_list=fix.correct_price, requires_quote=false
+FROM (VALUES
+('prov26-119',6500::numeric,2500::numeric),
+('prov26-121',6200::numeric,2200::numeric),
+('prov26-123',9250::numeric,5250::numeric),
+('prov26-125',9250::numeric,5250::numeric)
+) AS fix(id,correct_price,wrong_price)
+WHERE dest.id=fix.id
+ AND dest.currency='ARS'
+ AND dest.presentation ILIKE 'Tubo%'
+ AND dest.source_original_price=fix.correct_price
+ AND dest.price_list=fix.wrong_price;
 
 COMMIT;
 SELECT count(*) AS catalogo_2_importados FROM public.catalog_full_items WHERE id LIKE 'prov26-%';
