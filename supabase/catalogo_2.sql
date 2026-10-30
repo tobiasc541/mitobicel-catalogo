@@ -2,7 +2,7 @@
 -- Ejecutar una vez SOLO en el proyecto Supabase del catálogo MITOBICEL.
 -- No modifica ni elimina registros de public.catalog_items, catalog_offers o admin_users.
 -- Los dos catálogos pueden tener precios y presentaciones diferentes. 
--- Precio de lista separado de retiro y envío, para evitar asumir una modalidad de venta.
+-- Retiro por fábrica = precio ajustado de lista. Envío ARS = retiro + 1000 solo por bulto, caja o atado.
 
 create table if not exists public.catalog_full_items (
   id text primary key,

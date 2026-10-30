@@ -146,7 +146,7 @@ La dirección **/** permanece sin cambios; no modificar el QR ya impreso ni el c
 
 El Catálogo 1 / con QR no cambia. La lista completa está en **data/catalogo2.provincias.26-10.json** como fuente estática de respaldo. La página /catalogo-clientes muestra las 176 variantes aunque todavía no se haya creado la tabla Supabase. Cuando catalog_full_items contiene una fila con el mismo ID prov26-***, la versión editada desde admin prevalece.
 
-Los precios de lista en ARS vendidos por bulto, caja o atado mayorista recibieron un descuento fijo de ARS 4.000 (**140** importes), independientemente de su importe original. Los **18** precios ARS por tubo, kilo, unidad o paquete suelto se conservan exactamente como aparecen en el PDF, sin descuento. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list almacena el valor visible; price_pickup y price_delivery quedan vacíos porque el PDF no indica retiro o envío.
+Los precios de lista en ARS vendidos por bulto, caja o atado mayorista recibieron un descuento fijo de ARS 4.000 (**140** importes), independientemente de su importe original. Los **18** precios ARS por tubo, kilo, unidad o paquete suelto se conservan exactamente como aparecen en el PDF, sin descuento. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list conserva el valor ajustado de la lista; price_pickup indica retiro por fábrica y price_delivery es retiro + ARS $1.000 para bultos, cajas y atados en pesos. Los demás envíos se consultan.
 
 Para instalar en Supabase MITOBICEL: ejecutar **supabase/catalogo_2_setup_y_carga.sql** una sola vez en SQL Editor. Crea tabla y columnas y carga 176 artículos con ON CONFLICT DO NOTHING sin borrar ediciones previas ni tocar catalog_items. Alternativamente ejecutar supabase/catalogo_2.sql y luego presionar Importar productos faltantes a Supabase desde /admin/catalogo-2.
 
@@ -168,3 +168,12 @@ El proyecto Supabase MITOBICEL no figura entre los proyectos conectados a ChatGP
 - Valores USD: conservar el importe y moneda originales sin restar pesos.
 - Cuatro correcciones en las páginas 59-62: tubos 48 mm × 80 m a $6.500 y $6.200, tubos 48 mm × 100 m a $9.250 y $9.250.
 - La reparación de registros anteriores en Supabase es selectiva: solo corrige el valor erróneo exacto y respeta las modificaciones manuales.
+
+
+### Catálogo 2 — retiro y envío (30/10/2026)
+- Para **todas las 176 presentaciones**, el precio de retiro por fábrica es el precio de lista ya calculado. Nunca aplicar el descuento de $4.000 por segunda vez.
+- Para las **140 presentaciones ARS por bulto, caja o atado**, el precio con envío es el precio de retiro más **ARS $1.000 por unidad de venta**. Ejemplo: 10 kg de papel diario, $24.700 en fábrica y $25.700 con envío; caja Film Munsmawa x9, $51.500 / $52.500.
+- Las **18 presentaciones ARS por tubo, kg, unidad o paquete suelto** conservan el precio de retiro de la lista; envío pendiente de consulta.
+- Las **18 presentaciones USD** mantienen precio de retiro en USD; envío pendiente de consulta y sin conversión ficticia.
+- La página de clientes y carrito usan las dos columnas y totales de retiro/envío; el fallback local resuelve precios que Supabase aún guarde como NULL sin pisar precios manuales.
+- Para sincronizar la base: ejecutar `supabase/catalogo_2_precio_retiro_envio.sql` en Supabase MITOBICEL o usar la sincronización del superadmin. Todos los UPDATE afectan únicamente `catalog_full_items` y los valores NULL.

@@ -57,6 +57,37 @@ export function summarizeOrder(lines:OrderLine[]):OrderSummary {
  },{totalUnits:0,lineCount:0,pickupTotal:0,deliveryTotal:0,pickupMissing:0,deliveryMissing:0,referenceArs:0,referenceUsd:0,referenceArsCount:0,referenceUsdCount:0,referenceArsMissing:0,referenceUsdMissing:0});
 }
 
+export type Catalog2MoneyTotals={
+ currency:'ARS'|'USD';
+ lines:number;
+ pickup:number;
+ delivery:number;
+ pickupPriced:number;
+ deliveryPriced:number;
+};
+export const hasMoney=(amount:number|null|undefined):amount is number=>
+ typeof amount==='number'&&Number.isFinite(amount)&&amount>=0;
+
+// Suma cada moneda por separado y nunca toma productos sin precio
+// de envío como si su costo fuera cero.
+export function summarizeCatalog2Fulfillment(lines:OrderLine[]):Catalog2MoneyTotals[]{
+ const groups:{ARS:Catalog2MoneyTotals;USD:Catalog2MoneyTotals}={
+  ARS:{currency:'ARS',lines:0,pickup:0,delivery:0,pickupPriced:0,deliveryPriced:0},
+  USD:{currency:'USD',lines:0,pickup:0,delivery:0,pickupPriced:0,deliveryPriced:0}
+ };
+ for(const line of lines){
+  const g=groups[line.currency==='USD'?'USD':'ARS'];
+  const qty=Number.isFinite(line.quantity)?Math.max(0,line.quantity):0;
+  g.lines++;
+  const pickup=line.pricePickup??line.priceList;
+  if(hasMoney(pickup)){g.pickup+=pickup*qty;g.pickupPriced++;}
+  if(hasMoney(line.priceDelivery)){g.delivery+=line.priceDelivery*qty;g.deliveryPriced++;}
+ }
+ return [groups.ARS,groups.USD].filter(g=>g.lines>0);
+}
+export const formatCatalogCartMoney=(value:number,currency:'ARS'|'USD')=>
+ currency==='USD'?formatUsd(value):formatArs(value);
+
 export function whatsappQuote(lines:OrderLine[]){
  const sum=summarizeOrder(lines);
  const usesReference=lines.some(line=>line.priceList!==undefined);
@@ -64,29 +95,36 @@ export function whatsappQuote(lines:OrderLine[]){
   const unit=line.unit==='kg'?'kg':line.unit+(line.quantity===1?'':'s');
   const info=String(i+1)+'. '+line.title+' — '+line.detail+' — '+line.quantity+' '+unit;
   if(!usesReference)return info;
-  const formatted=line.priceList==null?'a confirmar':(line.currency==='USD'?formatUsd(line.priceList):formatArs(line.priceList));
-  return info+' — Precio lista: '+formatted;
+  const money=(v:number|null|undefined)=>hasMoney(v)?formatCatalogCartMoney(v,line.currency==='USD'?'USD':'ARS'):'A consultar';
+  const pickup=line.pricePickup??line.priceList;
+  return info+' — Retiro: '+money(pickup)+' por '+line.unit+
+    ' — Con envío: '+money(line.priceDelivery)+' por '+line.unit;
  });
- const totals=usesReference?[
-  ...(sum.referenceArsCount?[sum.referenceArsMissing===sum.referenceArsCount
-   ?'Total lista en ARS: a confirmar'
-   :'Subtotal de lista ARS'+(sum.referenceArsMissing?' (parcial)':'')+': '+formatArs(sum.referenceArs)]:[]),
-  ...(sum.referenceUsdCount?[sum.referenceUsdMissing===sum.referenceUsdCount
-   ?'Total lista en USD: a confirmar'
-   :'Subtotal de lista USD'+(sum.referenceUsdMissing?' (parcial)':'')+': '+formatUsd(sum.referenceUsd)]:[]),
-  'Importes de lista de referencia; retiro, envío y total final a confirmar con MITOBICEL.'
- ]:[
-  sum.pickupMissing===0
-   ?'Total estimado retirando por fábrica: '+formatArs(sum.pickupTotal)
-   :sum.pickupMissing===lines.length
-     ?'Total retirando por fábrica: a consultar (sin precios cargados)'
-     :'Subtotal conocido retirando por fábrica: '+formatArs(sum.pickupTotal)+' ('+sum.pickupMissing+' presentación(es) sin precio)',
-  sum.deliveryMissing===0
-   ?'Total estimado con envío: '+formatArs(sum.deliveryTotal)
-   :sum.deliveryMissing===lines.length
-     ?'Total con envío: a consultar (sin precios cargados)'
-     :'Subtotal conocido con envío: '+formatArs(sum.deliveryTotal)+' ('+sum.deliveryMissing+' presentación(es) sin precio)'
- ];
+ const totals=usesReference
+  ?summarizeCatalog2Fulfillment(lines).flatMap(g=>{
+    const format=(value:number)=>formatCatalogCartMoney(value,g.currency);
+    const pickup=g.pickupPriced===0
+      ?'A consultar'
+      :format(g.pickup)+(g.pickupPriced<g.lines?' (parcial)':'');
+    const delivery=g.deliveryPriced===0
+      ?'A coordinar'
+      :format(g.delivery)+(g.deliveryPriced<g.lines?' (parcial, faltan presentaciones)':'');
+    return ['Retiro por fábrica '+g.currency+': '+pickup,
+            'Con envío '+g.currency+': '+delivery];
+   }).concat('Montos estimados; confirmar stock, condiciones y reparto. No se suman pesos y dólares.')
+  :[
+   sum.pickupMissing===0
+    ?'Total estimado retirando por fábrica: '+formatArs(sum.pickupTotal)
+    :sum.pickupMissing===lines.length
+      ?'Total retirando por fábrica: a consultar (sin precios cargados)'
+      :'Subtotal conocido retirando por fábrica: '+formatArs(sum.pickupTotal)+' ('+sum.pickupMissing+' presentación(es) sin precio)',
+   sum.deliveryMissing===0
+    ?'Total estimado con envío: '+formatArs(sum.deliveryTotal)
+    :sum.deliveryMissing===lines.length
+      ?'Total con envío: a consultar (sin precios cargados)'
+      :'Subtotal conocido con envío: '+formatArs(sum.deliveryTotal)+' ('+sum.deliveryMissing+' presentación(es) sin precio)'
+  ];
+
  return 'https://wa.me/541162190702?text='+encodeURIComponent([
   'Hola MITOBICEL. Quiero cotizar este pedido mayorista:',
   ...items,'',...totals,

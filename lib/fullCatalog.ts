@@ -100,6 +100,34 @@ export const correctLegacyUnpricedRow=(remote:FullCatalogItem,official?:FullCata
  return remote;
 };
 
+
+// Política de precios de MITOBICEL Catálogo 2:
+// retiro = valor ya ajustado de la lista de Provincias;
+// envío = retiro + ARS $1.000 por bulto/caja/atado mayorista.
+// No sumar pesos a los importes expresados en USD ni fijar envíos de unidades sueltas.
+export const isWholesalePresentation=(presentation:string)=>
+ /^(?:bulto(?:\b|\/)|caja\b|atado\b)/i.test(presentation.trim());
+
+export const resolveCatalog2Prices=(remote:FullCatalogItem,official?:FullCatalogItem):FullCatalogItem=>{
+ const corrected=correctLegacyUnpricedRow(remote,official);
+ // Reparar también el retiro si provino exactamente del tubo mal descontado
+ // en la primera versión; cualquier importe personalizado se conserva.
+ const badLegacyTubePickup=Boolean(official&&
+   /^tubo\b/i.test(official.presentation.trim())&&
+   official.currency==='ARS'&&
+   official.source_original_price!=null&&
+   remote.price_list===official.source_original_price-4000&&
+   remote.price_pickup===remote.price_list&&
+   remote.source_original_price===official.source_original_price);
+ const pickup=badLegacyTubePickup?official!.price_pickup:
+   (corrected.price_pickup??corrected.price_list??official?.price_pickup??null);
+ const delivery=corrected.price_delivery??
+   ((corrected.currency||official?.currency||'ARS')==='ARS'&&
+     isWholesalePresentation(corrected.presentation)&&pickup!=null
+     ?pickup+1000:null);
+ return {...corrected,price_pickup:pickup,price_delivery:delivery};
+};
+
 export const formatCatalogPrice=(value:number|null|undefined,currency:'ARS'|'USD'='ARS')=>{
  if(value===null||value===undefined||!Number.isFinite(value))return 'A confirmar';
  return new Intl.NumberFormat('es-AR',{

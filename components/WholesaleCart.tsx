@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import type {OrderLine} from '@/lib/order';
-import {formatArs,formatUsd,summarizeOrder,whatsappQuote} from '@/lib/order';
+import {formatArs,summarizeOrder,summarizeCatalog2Fulfillment,formatCatalogCartMoney,whatsappQuote,hasMoney} from '@/lib/order';
 import {Icon} from '@/components/Visuals';
 
 export default function WholesaleCart({lines,onQuantity,onRemove}:{
@@ -12,6 +12,16 @@ export default function WholesaleCart({lines,onQuantity,onRemove}:{
  const [open,setOpen]=useState(false);
  const totals=summarizeOrder(lines);
  const hasList=lines.some(line=>line.priceList!==undefined);
+ const catalog2Totals=summarizeCatalog2Fulfillment(lines);
+ const fmtTotal=(g:(typeof catalog2Totals)[number],method:'pickup'|'delivery')=>{
+  const count=method==='pickup'?g.pickupPriced:g.deliveryPriced;
+  if(count===0)return 'A consultar';
+  return formatCatalogCartMoney(method==='pickup'?g.pickup:g.delivery,g.currency);
+ };
+ const isPartial=(g:(typeof catalog2Totals)[number],method:'pickup'|'delivery')=>
+  (method==='pickup'?g.pickupPriced:g.deliveryPriced)<g.lines;
+ const fmtLine=(line:OrderLine,value:number|null|undefined)=>
+  hasMoney(value)?formatCatalogCartMoney(value*line.quantity,line.currency==='USD'?'USD':'ARS'):'A consultar';
  useEffect(()=>{if(lines.length)setOpen(true)},[lines.length]);
  if(!lines.length)return null;
  const pickupPending=totals.pickupMissing>0;
@@ -27,8 +37,10 @@ export default function WholesaleCart({lines,onQuantity,onRemove}:{
    </div>
    <div className="cart-header-totals" aria-live="polite" aria-atomic="true">
     {hasList?<>
-     {totals.referenceArsCount>0&&<div><span>Lista ARS{totals.referenceArsMissing?' · parcial':''}</span><strong>{totals.referenceArsMissing===totals.referenceArsCount?'A confirmar':formatArs(totals.referenceArs)}</strong></div>}
-     {totals.referenceUsdCount>0&&<div><span>Lista USD{totals.referenceUsdMissing?' · parcial':''}</span><strong>{totals.referenceUsdMissing===totals.referenceUsdCount?'A confirmar':formatUsd(totals.referenceUsd)}</strong></div>}
+     {catalog2Totals.flatMap(g=>[
+      <div key={'ret-'+g.currency}><span>Retiro {g.currency}{isPartial(g,'pickup')?' · parcial':''}</span><strong>{fmtTotal(g,'pickup')}</strong></div>,
+      ...(g.deliveryPriced>0?[<div key={'env-'+g.currency}><span>Con envío {g.currency}{isPartial(g,'delivery')?' · parcial':''}</span><strong>{fmtTotal(g,'delivery')}</strong></div>]:[])
+     ])}
     </>:<>
      <div><span>Retiro en fábrica{pickupPending?' · parcial':''}</span><strong>{moneyOrPending(totals.pickupTotal,totals.pickupMissing)}</strong></div>
      <div><span>Con envío{deliveryPending?' · parcial':''}</span><strong>{moneyOrPending(totals.deliveryTotal,totals.deliveryMissing)}</strong></div>
@@ -44,7 +56,10 @@ export default function WholesaleCart({lines,onQuantity,onRemove}:{
      <strong>{line.title}</strong>
      <small>{line.detail}</small>
      <div className="cart-line-prices">
-      {hasList?<span>Precio de lista: {line.priceList==null?'A confirmar':line.currency==='USD'?formatUsd(line.priceList*line.quantity):formatArs(line.priceList*line.quantity)}</span>:<>
+      {hasList?<>
+       <span>Retiro: {fmtLine(line,line.pricePickup??line.priceList)}</span>
+       <span>Con envío: {fmtLine(line,line.priceDelivery)}</span>
+      </>:<>
        <span>Retiro: {line.pricePickup==null? 'A consultar':formatArs(line.pricePickup*line.quantity)}</span>
        <span>Envío: {line.priceDelivery==null? 'A consultar':formatArs(line.priceDelivery*line.quantity)}</span>
       </>}
@@ -60,9 +75,11 @@ export default function WholesaleCart({lines,onQuantity,onRemove}:{
    </div>)}</div>
    <div className="cart-summary" aria-live="polite" aria-atomic="true">
     {hasList?<>
-     {totals.referenceArsCount>0&&<div className="cart-summary-row"><span>Total de lista ARS{totals.referenceArsMissing?' (parcial)':''}</span><strong>{totals.referenceArsMissing===totals.referenceArsCount?'A confirmar':formatArs(totals.referenceArs)}</strong></div>}
-     {totals.referenceUsdCount>0&&<div className="cart-summary-row"><span>Total de lista USD{totals.referenceUsdMissing?' (parcial)':''}</span><strong>{totals.referenceUsdMissing===totals.referenceUsdCount?'A confirmar':formatUsd(totals.referenceUsd)}</strong></div>}
-     <p className="cart-pending">Son subtotales de referencia, sin sumar distintas monedas. Las presentaciones sin precio no se incluyen. Retiro, envío e importe final a confirmar con la fábrica.</p>
+     {catalog2Totals.flatMap(g=>[
+      <div className="cart-summary-row" key={'pickup-'+g.currency}><span>Retiro por fábrica {g.currency}{isPartial(g,'pickup')?' (parcial)':''}</span><strong>{fmtTotal(g,'pickup')}</strong></div>,
+      <div className="cart-summary-row" key={'delivery-'+g.currency}><span>Con envío {g.currency}{isPartial(g,'delivery')?' (parcial)':''}</span><strong>{fmtTotal(g,'delivery')}</strong></div>
+     ])}
+     <p className="cart-pending">Los precios sin envío cargado se coordinan con fábrica y no se suman como si fueran gratuitos. Si mezclás pesos con dólares, los totales se muestran separados. Confirmá stock y condiciones por WhatsApp.</p>
     </>:<>
      <div className="cart-summary-row"><span>Total retirando por fábrica{pickupPending?' (parcial)':''}</span><strong>{moneyOrPending(totals.pickupTotal,totals.pickupMissing)}</strong></div>
      <div className="cart-summary-row"><span>Total con envío{deliveryPending?' (parcial)':''}</span><strong>{moneyOrPending(totals.deliveryTotal,totals.deliveryMissing)}</strong></div>

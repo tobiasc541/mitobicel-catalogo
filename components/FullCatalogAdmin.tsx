@@ -125,6 +125,24 @@ export default function FullCatalogAdmin(){
   setAuthorized(false);setItems([]);setMessage('');
  }
 
+ // El adicional automático se conserva salvo que el admin haya puesto
+ // manualmente otro precio con envío.
+ function editPickupPrice(item:FullCatalogItem,next:number|null){
+  const autoDelivery=(item.currency||'ARS')==='ARS'&&isWholesalePresentation(item.presentation)
+   &&(item.price_delivery==null||
+     (item.price_pickup!=null&&item.price_delivery===item.price_pickup+1000));
+  patch(item.id,'price_pickup',next);
+  if(item.price_list==null||item.price_list===item.price_pickup)
+   patch(item.id,'price_list',next);
+  if(autoDelivery)patch(item.id,'price_delivery',next==null?null:next+1000);
+ }
+ function editBasePrice(item:FullCatalogItem,next:number|null){
+  const followsBase=item.price_pickup==null||item.price_pickup===item.price_list;
+  patch(item.id,'price_list',next);
+  patch(item.id,'requires_quote',next==null);
+  if(followsBase)editPickupPrice(item,next);
+ }
+
  function patch(id:string,key:keyof FullCatalogItem,value:string|number|boolean|null){
   dirty.current.add(id);
   editVersions.current.set(id,(editVersions.current.get(id)||0)+1);
@@ -206,54 +224,84 @@ export default function FullCatalogAdmin(){
 
  async function importPreparedCatalog(){
   if(!db||!authorized)return;
-  if(error){setMessage('Primero ejecutá el SQL de configuración en Supabase para crear la tabla del Catálogo 2.');return;}
+  if(error){setMessage('Primero activá la tabla Catálogo 2 en Supabase.');return;}
   setSaving(true);setImportProgress(0);setMessage('');
   try{
    const {data:existing,error:queryError}=await db.from(FULL_CATALOG_TABLE)
-    .select('id,price_list,currency,requires_quote,source_original_price');
+     .select('id,price_list,currency,requires_quote,source_original_price,presentation,price_pickup,price_delivery');
    if(queryError)throw queryError;
    const known=new Map((existing||[]).map(row=>[row.id,row]));
    const missing=initialCatalog.filter(row=>!known.has(row.id));
-   const toCorrect=initialCatalog.filter(official=>{
-    const current=known.get(official.id);
-    return current&&correctLegacyUnpricedRow(current as FullCatalogItem,official)!==current;
+   const repairs=initialCatalog.flatMap(official=>{
+    const row=known.get(official.id);
+    if(!row)return [];
+    const legacy=correctLegacyUnpricedRow(row as FullCatalogItem,official);
+    const effective=resolveCatalog2Prices(row as FullCatalogItem,official);
+    return [{original:row,official,correctList:legacy.price_list!==row.price_list,
+      pickup:row.price_pickup==null||row.price_pickup!==effective.price_pickup?effective.price_pickup:null,
+      delivery:row.price_delivery==null?effective.price_delivery:null}];
    });
-   const operations=Math.ceil(missing.length/20)+toCorrect.length;
-   let done=0,corrected=0;
+   const toCorrect=repairs.filter(x=>x.correctList);
+   const toPickup=repairs.filter(x=>x.pickup!=null);
+   const toDelivery=repairs.filter(x=>x.delivery!=null);
+   const operations=Math.ceil(missing.length/20)+toCorrect.length+toPickup.length+toDelivery.length;
+   let done=0,corrected=0,filledPickup=0,filledDelivery=0;
+   const advance=()=>setImportProgress(Math.round(++done/Math.max(1,operations)*100));
    for(let i=0;i<missing.length;i+=20){
-    const batch=missing.slice(i,i+20);
     const {error:batchError}=await db.from(FULL_CATALOG_TABLE)
-     .upsert(batch,{onConflict:'id',ignoreDuplicates:true});
+      .upsert(missing.slice(i,i+20),{onConflict:'id',ignoreDuplicates:true});
     if(batchError)throw batchError;
-    setImportProgress(Math.round(++done/Math.max(1,operations)*100));
+    advance();
    }
-   // Correcciones selectivas de importaciones anteriores. Preservar
-   // los precios personalizados del administrador.
-   for(const official of toCorrect){
+   // Solo reparar los errores conocidos sin alterar importes personalizados.
+   for(const repair of toCorrect){
+    const official=repair.official;
     let request=db.from(FULL_CATALOG_TABLE)
-     .update({price_list:official.price_list,requires_quote:false})
-     .eq('id',official.id)
-     .eq('currency','ARS')
-     .eq('source_original_price',official.source_original_price!);
-    if(/^tubo\b/i.test(official.presentation.trim())){
-     request=request.eq('price_list',official.source_original_price!-4000);
-    }else{
-     request=request.eq('requires_quote',true).is('price_list',null);
-    }
+      .update({price_list:official.price_list,requires_quote:false})
+      .eq('id',official.id).eq('currency','ARS')
+      .eq('source_original_price',official.source_original_price!);
+    if(/^tubo\b/i.test(official.presentation.trim()))
+      request=request.eq('price_list',official.source_original_price!-4000);
+    else request=request.eq('requires_quote',true).is('price_list',null);
     const {data:updated,error:updateError}=await request.select('id');
     if(updateError)throw updateError;
     corrected+=(updated||[]).length;
-    setImportProgress(Math.round(++done/Math.max(1,operations)*100));
+    advance();
+   }
+   for(let i=0;i<toPickup.length;i+=12){
+    const results=await Promise.all(toPickup.slice(i,i+12).map(async repair=>{
+     const baseRequest=db.from(FULL_CATALOG_TABLE)
+       .update({price_pickup:repair.pickup!})
+       .eq('id',repair.official.id);
+     const request=repair.original.price_pickup==null
+       ?baseRequest.is('price_pickup',null)
+       :baseRequest.eq('price_pickup',repair.original.price_pickup);
+     const {data,error:updateError}=await request.select('id');
+     if(updateError)throw updateError;
+     return (data||[]).length;
+    }));
+    filledPickup+=results.reduce((a,b)=>a+b,0);
+    for(const _ of results)advance();
+   }
+   for(let i=0;i<toDelivery.length;i+=12){
+    const results=await Promise.all(toDelivery.slice(i,i+12).map(async repair=>{
+     const {data,error:updateError}=await db.from(FULL_CATALOG_TABLE)
+       .update({price_delivery:repair.delivery!})
+       .eq('id',repair.official.id)
+       .eq('currency','ARS')
+       .eq('price_pickup',repair.delivery!-1000)
+       .is('price_delivery',null).select('id');
+     if(updateError)throw updateError;
+     return (data||[]).length;
+    }));
+    filledDelivery+=results.reduce((a,b)=>a+b,0);
+    for(const _ of results)advance();
    }
    await load();
-   setMessage(missing.length||corrected
-    ?'Sincronizadas '+missing.length+' presentaciones nuevas y corregidos '+corrected+' precios con valores incorrectos anteriores. No se sobrescribieron precios personalizados.'
-    :'El Catálogo 2 ya tiene sus 176 precios de lista sincronizados. No hubo cambios.');
+   setMessage('Catálogo 2 sincronizado: '+missing.length+' productos nuevos, '+corrected+' precios corregidos, '+filledPickup+' importes de retiro y '+filledDelivery+' precios con envío guardados. Se respetaron los valores personalizados.');
   }catch(err){
-   setMessage('No se pudo terminar la sincronización: '+(err instanceof Error?err.message:String(err))+'. Los datos ya guardados permanecen; podés reintentar.');
-  }finally{
-   setSaving(false);setImportProgress(null);
-  }
+   setMessage('Sincronización incompleta: '+(err instanceof Error?err.message:String(err))+'. Podés reintentar sin duplicar productos.');
+  }finally{setSaving(false);setImportProgress(null);}
  }
 
  async function removeRow(item:FullCatalogItem){
@@ -328,9 +376,9 @@ export default function FullCatalogAdmin(){
      {error&&<div className="admin-warning" role="alert"><strong>Falta activar la base de Catálogo 2.</strong><p>{error}</p></div>}
      <section className="panel catalog-2-import">
       <span className="overline">CATÁLOGO COMPLETO · LISTA PROVINCIAS 26/10</span>
-      <h2>176 presentaciones preparadas con precios de lista</h2>
-      <p>140 presentaciones por bulto, atado o caja con $4.000 de descuento; 18 precios por tubo, kilo, unidad o paquete suelto sin descuento; 18 precios en USD sin convertir. Las 176 variantes tienen precio de lista.</p>
-      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>incorpora registros faltantes y corrige antiguos precios vacíos o descuentos aplicados erróneamente a tubos</strong>, sin sobrescribir importes que ya modificaste.</p>
+      <h2>176 presentaciones con precios de retiro y envío</h2>
+      <p>Las 176 presentaciones ya tienen precio de retiro por fábrica. Las 140 vendidas por bulto, caja o atado en pesos incluyen $1.000 adicionales con envío. Para tubos, paquetes sueltos, kilos y artículos en USD, el envío queda a coordinar.</p>
+      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta sincronización <strong>incorpora productos faltantes y completa los precios de retiro y envío</strong>, sin sobrescribir importes personalizados.</p>
       <button className="btn green" type="button" disabled={saving||!!error||(syncedCount>=176&&unpricedLegacyCount===0)} onClick={()=>void importPreparedCatalog()}>
        {saving&&importProgress!==null?'Sincronizando '+importProgress+'%':syncedCount>=176&&unpricedLegacyCount===0?'176 productos con precios sincronizados ✓':'Sincronizar Catálogo 2'+(unpricedLegacyCount?' · corregir '+unpricedLegacyCount+' precios':'')}
       </button>
@@ -369,9 +417,9 @@ export default function FullCatalogAdmin(){
          <label>Subtítulo<input value={item.subtitle} onChange={e=>patch(item.id,'subtitle',e.target.value)}/></label>
          <label>Presentación<input value={item.presentation} onChange={e=>patch(item.id,'presentation',e.target.value)}/></label>
          <label>Medida<input value={item.measure} onChange={e=>patch(item.id,'measure',e.target.value)}/></label>
-         <label>Precio de lista<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_list??''} onChange={e=>{patch(item.id,'price_list',numberOrNull(e.target.value));patch(item.id,'requires_quote',!e.target.value.trim());}} placeholder="A confirmar"/></label>
+         <label>Precio base (referencia)<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_list??''} onChange={e=>editBasePrice(item,numberOrNull(e.target.value))} placeholder="A confirmar"/></label>
          <label>Moneda<select value={item.currency||'ARS'} onChange={e=>patch(item.id,'currency',e.target.value as 'ARS'|'USD')}><option value="ARS">Pesos argentinos (ARS)</option><option value="USD">Dólares (USD)</option></select></label>
-         <label>Retiro por fábrica $<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_pickup??''} onChange={e=>patch(item.id,'price_pickup',numberOrNull(e.target.value))} placeholder="Sin cargar"/></label>
+         <label>Retiro por fábrica $<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_pickup??''} onChange={e=>editPickupPrice(item,numberOrNull(e.target.value))} placeholder="Sin cargar"/></label>
          <label>Con envío $<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_delivery??''} onChange={e=>patch(item.id,'price_delivery',numberOrNull(e.target.value))} placeholder="Sin cargar"/></label>
          <label>{item.category==='arranque'?'Rollos/bulto':'Paquetes/bulto'}<input type="number" min="0" value={item.packages??''} onChange={e=>patch(item.id,'packages',numberOrNull(e.target.value))}/></label>
          <label>Bolsas por rollito<input type="number" min="0" value={item.bags_per_roll??''} onChange={e=>patch(item.id,'bags_per_roll',numberOrNull(e.target.value))}/></label>
