@@ -128,6 +128,10 @@ export const resolveCatalog2Prices=(remote:FullCatalogItem,official?:FullCatalog
  return {...corrected,price_pickup:pickup,price_delivery:delivery};
 };
 
+export const cleanCatalog2Title=(title:string)=>title
+ .replace(" (la imagen dice Blue; texto incrustado dice Negra)","")
+ .replace(" (imagen, página sin texto extraíble)","");
+
 export const formatCatalogPrice=(value:number|null|undefined,currency:'ARS'|'USD'='ARS')=>{
  if(value===null||value===undefined||!Number.isFinite(value))return 'A confirmar';
  return new Intl.NumberFormat('es-AR',{

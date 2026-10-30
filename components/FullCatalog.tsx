@@ -9,7 +9,7 @@ import {SocialQuestions,WholesaleFAQ} from '@/components/Conversion';
 import WholesaleCart from '@/components/WholesaleCart';
 import type {OrderLine} from '@/lib/order';
 import catalogSeedJSON from '@/data/catalogo2.provincias.26-10.json';
-import {FULL_CATALOG_PATH,FULL_CATALOG_TABLE,itemPresentation,normalizedSearch,orderUnit,formatCatalogPrice,priceUnitLabel,resolveCatalog2Prices,type FullCatalogItem} from '@/lib/fullCatalog';
+import {FULL_CATALOG_PATH,FULL_CATALOG_TABLE,itemPresentation,normalizedSearch,orderUnit,formatCatalogPrice,priceUnitLabel,resolveCatalog2Prices,cleanCatalog2Title,type FullCatalogItem} from '@/lib/fullCatalog';
 
 const wa=(message:string)=>'https://wa.me/541162190702?text='+encodeURIComponent(message);
 const fullList=catalogSeedJSON as FullCatalogItem[];
@@ -135,7 +135,7 @@ export default function FullCatalog(){
        return <article className="product-card" key={group.category}>
         <div className="product-head"><div className="product-title-area">
          <div className="product-picture">{image?<img src={image} alt={first.title}/>:<Icon name={icon}/>}</div>
-         <div><span className="overline">DIRECTO DE NUESTRA FÁBRICA</span><h3>{first.title}</h3><p>{first.subtitle}</p></div>
+         <div><span className="overline">DIRECTO DE NUESTRA FÁBRICA</span><h3>{cleanCatalog2Title(first.title)}</h3><p>{first.subtitle}</p></div>
         </div><span className="sku-count">{group.items.length} {group.items.length===1?'MEDIDA':'MEDIDAS'}</span></div>
         <div className="table-scroller"><table>
          <thead><tr><th>MEDIDA</th><th>PRESENTACIÓN</th><th>RETIRO FÁBRICA</th><th>CON ENVÍO</th><th>ACCIÓN</th></tr></thead>

@@ -29,8 +29,8 @@ INSERT INTO public.catalog_full_items (id,category,title,subtitle,measure,presen
 ('prov26-022','cat2-07-mitobicel-black-mas-que-premium-gofrada-alta-densida','MITOBICEL Black más que premium gofrada (alta densidad con lineal)','BOLSAS CAMISETA','45×60','Bulto · 20 paquetes · 48–55 bolsas/paquete aprox.',NULL,NULL,NULL,30000,31000,30000,'ARS',34000,14,false,false,true,NULL,22),
 ('prov26-023','cat2-08-mitobicel-violeta-mas-que-premium-gofrada-alta-densi','MITOBICEL violeta más que premium gofrada (alta densidad con lineal)','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,19000,20000,19000,'ARS',23000,15,false,false,true,NULL,23),
 ('prov26-024','cat2-09-mitobicel-negra-mas-que-premium-gofrada-alta-densida','MITOBICEL negra más que premium gofrada (alta densidad con lineal)','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,19000,20000,19000,'ARS',23000,16,false,false,true,NULL,24),
-('prov26-025','cat2-10-mitobicel-blue-mas-que-premium-gofrada-la-imagen-dic','MITOBICEL Blue más que premium gofrada (la imagen dice Blue; texto incrustado dice Negra)','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,19000,20000,19000,'ARS',23000,17,false,false,true,NULL,25),
-('prov26-026','cat2-11-mitobicel-verde-mas-que-premium-gofrada-imagen-pagin','MITOBICEL verde más que premium gofrada (imagen, página sin texto extraíble)','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,17900,18900,17900,'ARS',21900,18,false,false,true,NULL,26),
+('prov26-025','cat2-10-mitobicel-blue-mas-que-premium-gofrada-la-imagen-dic','MITOBICEL Blue más que premium gofrada','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,19000,20000,19000,'ARS',23000,17,false,false,true,NULL,25),
+('prov26-026','cat2-11-mitobicel-verde-mas-que-premium-gofrada-imagen-pagin','MITOBICEL verde más que premium gofrada','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 45–50 bolsas/paquete aprox.',NULL,NULL,NULL,17900,18900,17900,'ARS',21900,18,false,false,true,NULL,26),
 ('prov26-027','cat2-12-camiseta-gofrada-linea-virgen-biodegradable-alta-den','Camiseta gofrada línea virgen biodegradable (alta densidad con lineal y master; azul/verde/blanca/violeta)','BOLSAS CAMISETA','32×40','Bulto · 20 paquetes · 48–55 bolsas/paquete aprox.',NULL,NULL,NULL,16500,17500,16500,'ARS',20500,19,false,false,true,NULL,27),
 ('prov26-028','cat2-12-camiseta-gofrada-linea-virgen-biodegradable-alta-den','Camiseta gofrada línea virgen biodegradable (alta densidad con lineal y master; azul/verde/blanca/violeta)','BOLSAS CAMISETA','40×50','Bulto · 20 paquetes · 48–55 bolsas/paquete aprox.',NULL,NULL,NULL,22500,23500,22500,'ARS',26500,20,false,false,true,NULL,28),
 ('prov26-029','cat2-12-camiseta-gofrada-linea-virgen-biodegradable-alta-den','Camiseta gofrada línea virgen biodegradable (alta densidad con lineal y master; azul/verde/blanca/violeta)','BOLSAS CAMISETA','45×60','Bulto · 10 paquetes · 48–55 bolsas/paquete aprox.',NULL,NULL,NULL,18000,19000,18000,'ARS',22000,21,false,false,true,NULL,29),
@@ -239,5 +239,11 @@ WHERE id ~ '^prov26-[0-9]{3}$'
   AND price_pickup IS NOT NULL
   AND price_delivery IS NULL;
 
+UPDATE public.catalog_full_items
+SET title='MITOBICEL Blue más que premium gofrada'
+WHERE id='prov26-025' AND title='MITOBICEL Blue más que premium gofrada (la imagen dice Blue; texto incrustado dice Negra)';
+UPDATE public.catalog_full_items
+SET title='MITOBICEL verde más que premium gofrada'
+WHERE id='prov26-026' AND title='MITOBICEL verde más que premium gofrada (imagen, página sin texto extraíble)';
 COMMIT;
 SELECT count(*) AS catalogo_2_importados FROM public.catalog_full_items WHERE id LIKE 'prov26-%';
