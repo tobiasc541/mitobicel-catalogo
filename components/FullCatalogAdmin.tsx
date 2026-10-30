@@ -3,6 +3,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {getDb,getDbConfigIssue} from '@/lib/client';
 import {Icon} from '@/components/Visuals';
 import seedData from '@/data/catalogo2.provincias.26-10.json';
+import Catalog2BulkImages from '@/components/Catalog2BulkImages';
 import {
  FULL_CATALOG_TABLE,FULL_CATALOG_PATH,FULL_CATALOG_ADMIN_PATH,
  itemPresentation,makeCategorySlug,formatCatalogPrice,isWholesalePresentation,resolveCatalog2Prices,correctLegacyUnpricedRow,type FullCatalogItem
@@ -385,6 +386,7 @@ export default function FullCatalogAdmin(){
       {importProgress!==null&&<div className="catalog-2-progress" role="status"><div style={{width:importProgress+'%'}}/></div>}
       <small>Si aparece «Falta activar la base», ejecutá primero <code>supabase/catalogo_2_setup_y_carga.sql</code> en el proyecto MITOBICEL.</small>
      </section>
+     <Catalog2BulkImages onCompleted={load}/>
      <section className="panel"><span className="overline">CREAR PRODUCTOS</span><h2>Agregar nuevas líneas al Catálogo 2</h2>
       <p>Las líneas del PDF ya están preparadas. También podés añadir productos y medidas nuevos desde aquí.</p>
       <form className="full-admin-add-form" onSubmit={addNewLine}>

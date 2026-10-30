@@ -437,3 +437,23 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 @media(max-width:760px){
  .full-catalog-app .product-card .price-denominator{white-space:nowrap}
 }
+
+/* Catálogo 2 · importador masivo desde ZIP local */
+.catalog2-mass-import{display:flex;flex-direction:column;gap:13px}
+.catalog2-mass-import p{max-width:860px;line-height:1.6}
+.bulk-import-file{display:flex;flex-direction:column;gap:9px;padding:17px;border:2px dashed #a9d5b8;border-radius:14px;background:#f5fbf6;font-weight:700}
+.bulk-import-file input{display:block;width:100%;font-weight:400;min-height:44px}
+.catalog2-import-stats{display:flex;flex-wrap:wrap;gap:9px}
+.catalog2-import-stats span{padding:10px 14px;border-radius:11px;background:#edf8f0;color:#135b36;font-size:12px}
+.catalog2-import-stats strong{font-size:17px;margin-right:5px}
+.bulk-import-option{display:flex;align-items:center;gap:9px;font-weight:600;font-size:12px;line-height:1.5}
+.bulk-import-option input{width:17px;height:17px;flex:0 0 auto}
+.bulk-import-hint{font-size:12px;color:#53685b}
+.catalog2-mass-import>.btn{align-self:flex-start;min-height:48px}
+.catalog2-progress-track{height:10px;border-radius:100px;background:#e3efe6;overflow:hidden}
+.catalog2-progress-track>div{background:linear-gradient(90deg,#00662e,#25be64);height:100%;transition:width .25s ease}
+.catalog2-mass-progress span{font-size:12px;color:#175c38}
+.catalog2-import-error{border:1px solid #dd9b9b;border-radius:12px;background:#fff2f2;color:#a02020;padding:12px}
+.catalog2-import-log{max-height:220px;overflow:auto;font-size:12px;padding:12px;border-radius:12px;background:#f6f8f6}
+.catalog2-import-log p{margin:0;padding:4px 0}
+@media(max-width:600px){.catalog2-mass-import>.btn{align-self:stretch}.catalog2-import-stats span{flex:1}}
