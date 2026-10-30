@@ -52,15 +52,55 @@ export const itemPresentation=(item:FullCatalogItem)=>{
  return parts.join(' · ');
 };
 
-export const orderUnit=(presentation:string):'bulto'|'caja'|'combo'|'rollo'|'paquete'|'kg'|'unidad'|'tubo'=>{
- const p=presentation.toLowerCase();
- if(p.includes('por kg')||p.includes('/kg'))return 'kg';
- if(p.includes('unidad'))return 'unidad';
- if(p.includes('tubo'))return 'tubo';
- if(p.includes('caja'))return 'caja';
- if(p.includes('rollo'))return 'rollo';
- if(p.includes('paquete'))return 'paquete';
+export const orderUnit=(presentation:string):'bulto'|'caja'|'combo'|'rollo'|'paquete'|'kg'|'unidad'|'tubo'|'atado'=>{
+ const p=presentation.trim().toLocaleLowerCase('es');
+ if(/^precio por (kg|kilo)\b/.test(p))return 'kg';
+ if(/^unidad\b/.test(p))return 'unidad';
+ if(/^tubo\b/.test(p))return 'tubo';
+ if(/^caja\b/.test(p))return 'caja';
+ if(/^paquete\b/.test(p))return 'paquete';
+ if(/^rollo\b/.test(p))return 'rollo';
+ // La presentación principal define la unidad. Un atado puede incluir
+ // varios paquetes, pero se cotiza por atado, no por paquete.
+ if(/^bulto\/atado|^atado\b/.test(p))return 'atado';
+ if(/^bulto\b/.test(p))return 'bulto';
  return 'bulto';
+};
+
+// Denominador visible junto al importe: evita confundir precio/kg con
+// precio/bobina, o paquete suelto con bulto/atado.
+export const priceUnitLabel=(presentation:string)=>{
+ const p=presentation.trim().toLocaleLowerCase('es');
+ if(/^precio por (kg|kilo)\b/.test(p))return '/kg';
+ if(/^unidad\b/.test(p))return '/unidad';
+ if(/^paquete\b/.test(p))return '/paquete';
+ if(/^tubo\b/.test(p))return '/tubo';
+ if(/^caja\b/.test(p))return '/caja';
+ if(/^bulto\/atado|^atado\b/.test(p))return '/atado';
+ if(/^rollo\b/.test(p))return '/rollo';
+ if(/^bulto\b/.test(p))return '/bulto';
+ return '';
+};
+
+// La versión inicial del Catálogo 2 omitió catorce importes chicos.
+// En caso de que Supabase conserve ese error (NULL/«A consultar»),
+// aplicar la corrección oficial solo cuando la fila no fue personalizada.
+export const correctLegacyUnpricedRow=(remote:FullCatalogItem,official?:FullCatalogItem):FullCatalogItem=>{
+ if(official&&
+  official.id===remote.id&&
+  official.currency==='ARS'&&
+  official.price_list!=null&&
+  official.price_list===official.source_original_price&&
+  official.source_original_price!=null&&
+  official.source_original_price<4000&&
+  remote.price_list==null&&
+  remote.requires_quote===true&&
+  remote.source_original_price===official.source_original_price&&
+  (remote.currency||'ARS')==='ARS'
+ ){
+  return {...remote,price_list:official.price_list,requires_quote:false};
+ }
+ return remote;
 };
 
 export const formatCatalogPrice=(value:number|null|undefined,currency:'ARS'|'USD'='ARS')=>{

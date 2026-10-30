@@ -146,10 +146,18 @@ La dirección **/** permanece sin cambios; no modificar el QR ya impreso ni el c
 
 El Catálogo 1 / con QR no cambia. La lista completa está en **data/catalogo2.provincias.26-10.json** como fuente estática de respaldo. La página /catalogo-clientes muestra las 176 variantes aunque todavía no se haya creado la tabla Supabase. Cuando catalog_full_items contiene una fila con el mismo ID prov26-***, la versión editada desde admin prevalece.
 
-Los precios de lista ARS iguales o mayores a 4.000 recibieron un descuento fijo de ARS 4.000 (**144** importes). Los **14** precios ARS inferiores a 4.000 quedan A confirmar para evitar precios negativos. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list almacena el valor visible; price_pickup y price_delivery quedan vacíos porque el PDF no indica retiro o envío.
+Los precios de lista ARS iguales o mayores a 4.000 recibieron un descuento fijo de ARS 4.000 (**144** importes). Los **14** precios ARS por kilo, unidad o paquete suelto (inferiores a $4.000) se conservan exactamente como aparecen en el PDF, sin descuento. Los **18** precios en USD conservan su valor original, sin conversión ni descuento en pesos. source_original_price y source_page mantienen la referencia del PDF. price_list almacena el valor visible; price_pickup y price_delivery quedan vacíos porque el PDF no indica retiro o envío.
 
 Para instalar en Supabase MITOBICEL: ejecutar **supabase/catalogo_2_setup_y_carga.sql** una sola vez en SQL Editor. Crea tabla y columnas y carga 176 artículos con ON CONFLICT DO NOTHING sin borrar ediciones previas ni tocar catalog_items. Alternativamente ejecutar supabase/catalogo_2.sql y luego presionar Importar productos faltantes a Supabase desde /admin/catalogo-2.
 
-El carrito calcula subtotales de lista ARS y USD por separado y muestra pendientes de cotización sin considerarlos costo cero. Se confirman retiro, envío y precio final por WhatsApp.
+Las 176 variantes tienen precio de lista. El carrito calcula subtotales de lista ARS y USD por separado. El importe por kilo no equivale al precio final de la bobina, cuyo peso es aproximado. Se confirman retiro, envío y precio final por WhatsApp.
 
 El proyecto Supabase MITOBICEL no figura entre los proyectos conectados a ChatGPT; hasta ejecutar el SQL o la importación desde el panel no hay garantía de que la base remota esté sincronizada.
+
+
+### Corrección de unidades (30/10/2026)
+- En el PDF original, página 66, bobina importada: ARS $2.870/kg (sin descuento). Página 67: bobina Brown: ARS $2.550/kg (sin descuento).
+- En páginas 65 y 68, bultos de 10 kg: ARS $28.700 - $4.000 = ARS $24.700/bulto.
+- En páginas 80-81, los carteles estallidos por paquete suelto de 10/20 unidades conservan su precio original. Los atados de 10 paquetes por bulto siguen con $4.000 descontados.
+- En páginas 58 y 75, cinta confitera por unidad y paquete de bolsas de escombro también conservan el precio suelto original.
+- `supabase/catalogo_2_correccion_precios_unidad_kg_sueltos.sql` corrige exclusivamente las 14 filas importadas antes como precio NULL y solo si no fueron modificadas; el superadmin incorpora el mismo ajuste con el botón de sincronización.

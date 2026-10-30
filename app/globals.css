@@ -422,3 +422,18 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .catalog-provenance{display:flex;align-items:center;gap:6px;padding:9px 11px;background:#f4f9f5;border-radius:10px;align-self:center;color:#54745c;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 @media(min-width:761px){.full-catalog-app .product-card .table-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}.full-catalog-app .product-card table{min-width:630px}}
 @media(max-width:760px){.full-catalog-notice{font-size:11px;margin-bottom:15px;padding:12px}.full-catalog-app .product-card table{max-width:100%}.full-catalog-admin .catalog-2-import{padding:18px 14px}.catalog-provenance{grid-column:1/-1}}
+
+/* Catálogo 2: importes con unidad explícita en móviles y desktop */
+.full-catalog-app .product-card .price-list .price-denominator{
+ display:inline;
+ font-size:10px;
+ font-weight:700;
+ color:#45735b;
+ white-space:nowrap;
+}
+.full-catalog-app .product-card .price-list{font-variant-numeric:tabular-nums}
+.full-catalog-app .table-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.full-catalog-app .product-card table{border-collapse:collapse}
+@media(max-width:760px){
+ .full-catalog-app .product-card .price-denominator{white-space:nowrap}
+}

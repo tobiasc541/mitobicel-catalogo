@@ -9,7 +9,7 @@ import {SocialQuestions,WholesaleFAQ} from '@/components/Conversion';
 import WholesaleCart from '@/components/WholesaleCart';
 import type {OrderLine} from '@/lib/order';
 import catalogSeedJSON from '@/data/catalogo2.provincias.26-10.json';
-import {FULL_CATALOG_PATH,FULL_CATALOG_TABLE,itemPresentation,normalizedSearch,orderUnit,formatCatalogPrice,type FullCatalogItem} from '@/lib/fullCatalog';
+import {FULL_CATALOG_PATH,FULL_CATALOG_TABLE,itemPresentation,normalizedSearch,orderUnit,formatCatalogPrice,priceUnitLabel,correctLegacyUnpricedRow,type FullCatalogItem} from '@/lib/fullCatalog';
 
 const wa=(message:string)=>'https://wa.me/541162190702?text='+encodeURIComponent(message);
 const fullList=catalogSeedJSON as FullCatalogItem[];
@@ -17,7 +17,7 @@ function mergePublishedRows(remote:FullCatalogItem[]){
  const byId=new Map<string,FullCatalogItem>(fullList.map(row=>[row.id,row]));
  const custom:FullCatalogItem[]=[];
  for(const row of remote){
-  if(byId.has(row.id))byId.set(row.id,row);
+  if(byId.has(row.id))byId.set(row.id,correctLegacyUnpricedRow(row,byId.get(row.id)));
   else if(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(row.id))custom.push(row);
  }
  return [...byId.values(),...custom].sort((a,b)=>a.position-b.position);
@@ -64,6 +64,10 @@ export default function FullCatalog(){
   return order.map(category=>({category,items:matching.filter(item=>item.category===category)}));
  },[items,search]);
  const categoryCount=new Set(items.filter(item=>item.enabled).map(item=>item.category)).size;
+ // Evitar columnas completas de «Consultar» hasta que el admin haya publicado
+ // precios diferenciados para retiro o envío en este catálogo.
+ const showPickup=items.some(item=>item.enabled&&item.price_pickup!=null);
+ const showDelivery=items.some(item=>item.enabled&&item.price_delivery!=null);
  const addMeasure=(item:FullCatalogItem)=>addOrder({
   key:'full-'+item.id,
   title:item.title,
@@ -119,7 +123,7 @@ export default function FullCatalog(){
      <h2>Todo lo que tu <em>negocio necesita.</em></h2>
      <p>176 presentaciones de la lista Provincias. Precios de lista y opciones de cotización para compras mayoristas.</p>
     </div></div>
-    <div className="full-catalog-notice">Los valores de <strong>«Precio lista»</strong> corresponden a la lista del 26/10 ajustada en pesos; los importes en USD conservan su moneda. El retiro y el envío se confirman con la fábrica. Las presentaciones marcadas «A confirmar» no tienen un precio publicado.</div>
+    <div className="full-catalog-notice">Los <strong>precios de lista</strong> corresponden al PDF del 26/10: los bultos y presentaciones mayoristas en pesos llevan $4.000 de descuento; los precios por kilo, unidad y paquete suelto de bajo importe conservan su valor original. Los USD siguen expresados en dólares. Retiro y envío se confirman con la fábrica.</div>
     <div className="filters"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar producto o medida..." aria-label="Buscar producto, línea o medida"/></div>
     {loading&&<div className="full-catalog-message" role="status">Cargando catálogo completo…</div>}
     {!loading&&error&&<div className="full-catalog-message" role="status"><strong>Catálogo en preparación</strong><p>{error}</p><a className="btn green" href={wa('Hola MITOBICEL, quiero consultar el catálogo completo mayorista')} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp"/> Consultar por WhatsApp</a></div>}
@@ -138,13 +142,13 @@ export default function FullCatalog(){
          <div><span className="overline">DIRECTO DE NUESTRA FÁBRICA</span><h3>{first.title}</h3><p>{first.subtitle}</p></div>
         </div><span className="sku-count">{group.items.length} {group.items.length===1?'MEDIDA':'MEDIDAS'}</span></div>
         <div className="table-scroller"><table>
-         <thead><tr><th>MEDIDA</th><th>PRESENTACIÓN</th><th>PRECIO LISTA</th><th>RETIRO FÁBRICA</th><th>CON ENVÍO</th><th>ACCIÓN</th></tr></thead>
+         <thead><tr><th>MEDIDA</th><th>PRESENTACIÓN</th><th>PRECIO LISTA</th>{showPickup&&<th>RETIRO FÁBRICA</th>}{showDelivery&&<th>CON ENVÍO</th>}<th>ACCIÓN</th></tr></thead>
          <tbody>{group.items.map(item=><tr key={item.id}>
           <td className="size" data-label="Medida">{item.measure}</td>
           <td data-label="Presentación">{itemPresentation(item)}</td>
-          <td className="price price-list" data-label="Precio lista">{formatCatalogPrice(item.price_list,item.currency||'ARS')}{item.requires_quote&&<small> Consultar</small>}</td>
-          <td className="price" data-label="Retiro por fábrica">{item.price_pickup==null?'Consultar precio':formatCatalogPrice(item.price_pickup,item.currency||'ARS')}</td>
-          <td className="price price-green" data-label="Con envío">{item.price_delivery==null?'Consultar precio':formatCatalogPrice(item.price_delivery,item.currency||'ARS')}</td>
+          <td className="price price-list" data-label="Precio lista">{formatCatalogPrice(item.price_list,item.currency||'ARS')}{item.price_list!=null&&<small className="price-denominator"> {priceUnitLabel(item.presentation)}</small>}{item.requires_quote&&<small> Consultar</small>}</td>
+          {showPickup&&<td className="price" data-label="Retiro por fábrica">{item.price_pickup==null?'Consultar precio':formatCatalogPrice(item.price_pickup,item.currency||'ARS')}</td>}
+          {showDelivery&&<td className="price price-green" data-label="Con envío">{item.price_delivery==null?'Consultar precio':formatCatalogPrice(item.price_delivery,item.currency||'ARS')}</td>}
           <td className="add-cell"><button type="button" className="add-product" onClick={()=>addMeasure(item)}>+ Cotizar / Agregar</button></td>
          </tr>)}</tbody>
         </table></div>

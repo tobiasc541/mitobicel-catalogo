@@ -5,7 +5,7 @@ import {Icon} from '@/components/Visuals';
 import seedData from '@/data/catalogo2.provincias.26-10.json';
 import {
  FULL_CATALOG_TABLE,FULL_CATALOG_PATH,FULL_CATALOG_ADMIN_PATH,
- itemPresentation,makeCategorySlug,formatCatalogPrice,type FullCatalogItem
+ itemPresentation,makeCategorySlug,formatCatalogPrice,correctLegacyUnpricedRow,type FullCatalogItem
 } from '@/lib/fullCatalog';
 
 const numberOrNull=(value:string)=>value.trim()===''?null:Number(value);
@@ -19,6 +19,7 @@ export default function FullCatalogAdmin(){
  const [password,setPassword]=useState('');
  const [items,setItems]=useState<FullCatalogItem[]>(initialCatalog);
  const [syncedCount,setSyncedCount]=useState(0);
+ const [unpricedLegacyCount,setUnpricedLegacyCount]=useState(0);
  const [importProgress,setImportProgress]=useState<number|null>(null);
  const [error,setError]=useState('');
  const [message,setMessage]=useState('');
@@ -50,13 +51,17 @@ export default function FullCatalogAdmin(){
   const remote=(data||[]) as FullCatalogItem[];
   const imported=new Set(remote.filter(row=>row.id.startsWith('prov26-')).map(row=>row.id));
   setSyncedCount(imported.size);
+  const initialById=new Map(initialCatalog.map(row=>[row.id,row]));
+  setUnpricedLegacyCount(remote.filter(row=>
+    correctLegacyUnpricedRow(row,initialById.get(row.id))!==row
+  ).length);
   setItems(previous=>{
    const local=new Map(previous.map(row=>[row.id,row]));
    const combined=new Map(initialCatalog.map(row=>[row.id,row]));
    const extras:FullCatalogItem[]=[];
    for(const row of remote){
     if(combined.has(row.id))
-     combined.set(row.id,dirty.current.has(row.id)?local.get(row.id)||row:row);
+     combined.set(row.id,dirty.current.has(row.id)?local.get(row.id)||row:correctLegacyUnpricedRow(row,combined.get(row.id)));
     else if(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(row.id))
      extras.push(dirty.current.has(row.id)?local.get(row.id)||row:row);
    }
@@ -204,24 +209,44 @@ export default function FullCatalogAdmin(){
   if(error){setMessage('Primero ejecutá el SQL de configuración en Supabase para crear la tabla del Catálogo 2.');return;}
   setSaving(true);setImportProgress(0);setMessage('');
   try{
-   const {data:existing,error:queryError}=await db.from(FULL_CATALOG_TABLE).select('id');
+   const {data:existing,error:queryError}=await db.from(FULL_CATALOG_TABLE)
+    .select('id,price_list,currency,requires_quote,source_original_price');
    if(queryError)throw queryError;
-   const known=new Set((existing||[]).map(row=>row.id));
+   const known=new Map((existing||[]).map(row=>[row.id,row]));
    const missing=initialCatalog.filter(row=>!known.has(row.id));
-   if(!missing.length){
-    setMessage('Las 176 presentaciones ya están en Supabase. No se sobreescribieron precios existentes.');
-   }else{
-    for(let i=0;i<missing.length;i+=20){
-     const batch=missing.slice(i,i+20);
-     const {error:batchError}=await db.from(FULL_CATALOG_TABLE).upsert(batch,{onConflict:'id',ignoreDuplicates:true});
-     if(batchError)throw batchError;
-     setImportProgress(Math.min(100,Math.round((i+batch.length)/missing.length*100)));
-    }
-    setMessage('Se sincronizaron las presentaciones faltantes del Catálogo 2. Los cambios posteriores en el admin permanecen independientes.');
+   const toCorrect=initialCatalog.filter(official=>{
+    const current=known.get(official.id);
+    return current&&correctLegacyUnpricedRow(current as FullCatalogItem,official)!==current;
+   });
+   const operations=Math.ceil(missing.length/20)+toCorrect.length;
+   let done=0,corrected=0;
+   for(let i=0;i<missing.length;i+=20){
+    const batch=missing.slice(i,i+20);
+    const {error:batchError}=await db.from(FULL_CATALOG_TABLE)
+     .upsert(batch,{onConflict:'id',ignoreDuplicates:true});
+    if(batchError)throw batchError;
+    setImportProgress(Math.round(++done/Math.max(1,operations)*100));
+   }
+   // Actualizamos únicamente los 14 importes antiguos que estaban NULL,
+   // si siguen coincidiendo con el precio original del PDF. No se pisan
+   // ediciones posteriores del administrador.
+   for(const official of toCorrect){
+    const {data:updated,error:updateError}=await db.from(FULL_CATALOG_TABLE)
+     .update({price_list:official.price_list,requires_quote:false})
+     .eq('id',official.id)
+     .eq('source_original_price',official.source_original_price!)
+     .eq('requires_quote',true).is('price_list',null)
+     .select('id');
+    if(updateError)throw updateError;
+    corrected+=(updated||[]).length;
+    setImportProgress(Math.round(++done/Math.max(1,operations)*100));
    }
    await load();
+   setMessage(missing.length||corrected
+    ?'Sincronizadas '+missing.length+' presentaciones nuevas y corregidos '+corrected+' precios que estaban sin cargar. No se sobrescribieron precios personalizados.'
+    :'El Catálogo 2 ya tiene sus 176 precios de lista sincronizados. No hubo cambios.');
   }catch(err){
-   setMessage('No se pudo terminar la importación: '+(err instanceof Error?err.message:String(err))+'. Las filas ya importadas permanecen guardadas; podés reintentar.');
+   setMessage('No se pudo terminar la sincronización: '+(err instanceof Error?err.message:String(err))+'. Los datos ya guardados permanecen; podés reintentar.');
   }finally{
    setSaving(false);setImportProgress(null);
   }
@@ -300,10 +325,10 @@ export default function FullCatalogAdmin(){
      <section className="panel catalog-2-import">
       <span className="overline">CATÁLOGO COMPLETO · LISTA PROVINCIAS 26/10</span>
       <h2>176 presentaciones preparadas con precios de lista</h2>
-      <p>144 precios en pesos con $4.000 de descuento. 18 importes USD conservados en dólares. 14 precios menores a $4.000 quedaron para consultar, porque el descuento daría un importe negativo.</p>
-      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>solo incorpora registros faltantes</strong> y nunca pisa precios que ya modificaste.</p>
-      <button className="btn green" type="button" disabled={saving||!!error||syncedCount>=176} onClick={()=>void importPreparedCatalog()}>
-       {saving&&importProgress!==null?'Importando '+importProgress+'%':syncedCount>=176?'176 productos sincronizados ✓':'Importar productos faltantes a Supabase'}
+      <p>144 presentaciones mayoristas con $4.000 de descuento; 14 precios por kilo, unidad o paquete suelto conservados tal como figuran en el PDF; 18 precios en USD sin convertir. Las 176 variantes tienen precio de lista.</p>
+      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>incorpora registros faltantes y corrige los antiguos precios vacíos</strong>, sin sobrescribir importes que ya modificaste.</p>
+      <button className="btn green" type="button" disabled={saving||!!error||(syncedCount>=176&&unpricedLegacyCount===0)} onClick={()=>void importPreparedCatalog()}>
+       {saving&&importProgress!==null?'Sincronizando '+importProgress+'%':syncedCount>=176&&unpricedLegacyCount===0?'176 productos con precios sincronizados ✓':'Sincronizar Catálogo 2'+(unpricedLegacyCount?' · corregir '+unpricedLegacyCount+' precios':'')}
       </button>
       {importProgress!==null&&<div className="catalog-2-progress" role="status"><div style={{width:importProgress+'%'}}/></div>}
       <small>Si aparece «Falta activar la base», ejecutá primero <code>supabase/catalogo_2_setup_y_carga.sql</code> en el proyecto MITOBICEL.</small>

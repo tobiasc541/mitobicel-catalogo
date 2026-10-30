@@ -1,17 +1,10 @@
--- MITOBICEL | Carga completa Provincias 26/10/2026, descuento fijo ARS $4.000.
--- Todos los 176 productos con IDs prov26-***. Solo afecta catalog_full_items.
--- No modifica catalog_items, el QR, ofertas, administradores ni perfiles.
--- 144 importes ARS >= 4000 reciben -4000; 14 importes ARS < 4000 se dejan a consultar.
--- 18 importes USD se conservan sin conversion ni descuento de pesos.
--- Se usa precio de lista porque el PDF no distingue entre retiro y envío.
--- Requiere ejecutar supabase/catalogo_2.sql para asegurar tabla y columnas.
--- ON CONFLICT DO NOTHING conserva ediciones que ya se hubieran hecho en Catálogo 2.
+-- MITOBICEL Catálogo 2 · Lista Provincias 26-10-2026 · 176 presentaciones
+-- Unicamente catalog_full_items. NO modificar catálogo público del QR.
+-- ARS: 144 precios mayoristas por presentacion -$4.000; 14 precios por kilo/unidad/paquete se mantienen originales.
+-- USD: 18 precios se preservan sin conversion.
+-- Ingreso idempotente; precios personalizados no son sobrescritos.
 BEGIN;
-INSERT INTO public.catalog_full_items
-(id,category,title,subtitle,measure,presentation,
- packages,bags_per_roll,units_per_box,price_pickup,price_delivery,price_list,currency,
- source_original_price,source_page,requires_quote,featured,enabled,image_url,position)
-VALUES
+INSERT INTO public.catalog_full_items (id,category,title,subtitle,measure,presentation,packages,bags_per_roll,units_per_box,price_pickup,price_delivery,price_list,currency,source_original_price,source_page,requires_quote,featured,enabled,image_url,position) VALUES
 ('prov26-001','cat2-01-film-munsmawa','Film Munsmawa','FILM ADHERENTE / ALIMENTICIO','45 cm · código 350','Caja · 9 unidades/caja · nuevo packaging',NULL,NULL,NULL,NULL,NULL,51500,'ARS',55500,2,false,false,true,NULL,1),
 ('prov26-002','cat2-01-film-munsmawa','Film Munsmawa','FILM ADHERENTE / ALIMENTICIO','45 cm · código 350','Bulto · 10 unidades/bulto',NULL,NULL,NULL,NULL,NULL,61560,'ARS',65560,4,false,false,true,NULL,2),
 ('prov26-003','cat2-02-film-therma-pro','Film Therma Pro','FILM ADHERENTE / ALIMENTICIO','30 cm · código 300','Bulto · 12 unidades/bulto',NULL,NULL,NULL,NULL,NULL,30000,'ARS',34000,3,false,false,true,NULL,3),
@@ -128,7 +121,7 @@ VALUES
 ('prov26-114','cat2-30-rollo-papel-duplicado-quimico','Rollo papel duplicado químico','ROLLOS TÉRMICOS, OBRA, QUÍMICO Y ETIQUETAS','76×30','Bulto · 10 unidades/bulto',NULL,NULL,NULL,NULL,NULL,18.17,'USD',18.17,56,false,false,true,NULL,114),
 ('prov26-115','cat2-30-rollo-papel-duplicado-quimico','Rollo papel duplicado químico','ROLLOS TÉRMICOS, OBRA, QUÍMICO Y ETIQUETAS','75×30','Bulto · 10 unidades/bulto',NULL,NULL,NULL,NULL,NULL,18.17,'USD',18.17,56,false,false,true,NULL,115),
 ('prov26-116','cat2-31-etiquetas-autoadhesivas-top','Etiquetas autoadhesivas TOP','ROLLOS TÉRMICOS, OBRA, QUÍMICO Y ETIQUETAS','55×44','Bulto · 80 rollos/bulto',NULL,NULL,NULL,NULL,NULL,75.42,'USD',75.42,57,false,false,true,NULL,116),
-('prov26-117','cat2-32-cinta-confitera-cristal','Cinta confitera cristal','CINTAS DE EMBALAR Y CONFITERA','24 mm × 50 mts','Unidad · color cristal',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',365,58,true,false,true,NULL,117),
+('prov26-117','cat2-32-cinta-confitera-cristal','Cinta confitera cristal','CINTAS DE EMBALAR Y CONFITERA','24 mm × 50 mts','Unidad · color cristal',NULL,NULL,NULL,NULL,NULL,365,'ARS',365,58,false,false,true,NULL,117),
 ('prov26-118','cat2-32-cinta-confitera-cristal','Cinta confitera cristal','CINTAS DE EMBALAR Y CONFITERA','24 mm × 50 mts','Bulto · 72 unidades/bulto · color cristal',NULL,NULL,NULL,NULL,NULL,23950,'ARS',27950,58,false,false,true,NULL,118),
 ('prov26-119','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Tubo · 6 unidades/tubo',NULL,NULL,NULL,NULL,NULL,2500,'ARS',6500,59,false,false,true,NULL,119),
 ('prov26-120','cat2-33-cinta-de-embalar-importada-cristal-48-mm-80-mts','Cinta de embalar importada cristal · 48 mm × 80 mts','CINTAS DE EMBALAR Y CONFITERA','48 mm × 80 mts','Bulto · 36 unidades/bulto',NULL,NULL,NULL,NULL,NULL,35000,'ARS',39000,59,false,false,true,NULL,120),
@@ -148,9 +141,9 @@ VALUES
 ('prov26-134','cat2-38-papel-diario-importado-para-fiambres-facturas-etc','Papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','45×60','Bulto · 10 kg/bulto',NULL,NULL,NULL,NULL,NULL,24700,'ARS',28700,65,false,false,true,NULL,134),
 ('prov26-135','cat2-38-papel-diario-importado-para-fiambres-facturas-etc','Papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','50×70','Bulto · 10 kg/bulto',NULL,NULL,NULL,NULL,NULL,24700,'ARS',28700,65,false,false,true,NULL,135),
 ('prov26-136','cat2-38-papel-diario-importado-para-fiambres-facturas-etc','Papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','60×90','Bulto · 10 kg/bulto',NULL,NULL,NULL,NULL,NULL,24700,'ARS',28700,65,false,false,true,NULL,136),
-('prov26-137','cat2-39-bobina-papel-diario-importado-para-fiambres-facturas','Bobina papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','40 cm','Precio por kg · aprox. 8 kg/bobina',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2870,66,true,false,true,NULL,137),
-('prov26-138','cat2-39-bobina-papel-diario-importado-para-fiambres-facturas','Bobina papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','60 cm','Precio por kg · aprox. 12 kg/bobina',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2870,66,true,false,true,NULL,138),
-('prov26-139','cat2-40-bobina-papel-diario-extrafino-brown','Bobina papel diario extrafino Brown','PAPEL DIARIO Y BOBINAS','60 cm','Precio por kg · aprox. 7,5 kg/bobina',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2550,67,true,false,true,NULL,139),
+('prov26-137','cat2-39-bobina-papel-diario-importado-para-fiambres-facturas','Bobina papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','40 cm','Precio por kg · aprox. 8 kg/bobina',NULL,NULL,NULL,NULL,NULL,2870,'ARS',2870,66,false,false,true,NULL,137),
+('prov26-138','cat2-39-bobina-papel-diario-importado-para-fiambres-facturas','Bobina papel diario importado (para fiambres, facturas, etc.)','PAPEL DIARIO Y BOBINAS','60 cm','Precio por kg · aprox. 12 kg/bobina',NULL,NULL,NULL,NULL,NULL,2870,'ARS',2870,66,false,false,true,NULL,138),
+('prov26-139','cat2-40-bobina-papel-diario-extrafino-brown','Bobina papel diario extrafino Brown','PAPEL DIARIO Y BOBINAS','60 cm','Precio por kg · aprox. 7,5 kg/bobina',NULL,NULL,NULL,NULL,NULL,2550,'ARS',2550,67,false,false,true,NULL,139),
 ('prov26-140','cat2-41-fondo-de-pizza-de-papel-diario','Fondo de pizza de papel diario','PAPEL DIARIO Y BOBINAS','30×30','Bulto · 10 kg/bulto',NULL,NULL,NULL,NULL,NULL,24700,'ARS',28700,68,false,false,true,NULL,140),
 ('prov26-141','cat2-42-bolsas-de-residuo-mitobicel-en-rollitos-fondo-estrel','Bolsas de residuo MITOBICEL en rollitos fondo estrella en caja','ROLLO FONDO ESTRELLA — RESIDUO/CONSORCIO','45×60','Caja · 24 rollos/caja · 20 bolsas/rollo',NULL,NULL,NULL,NULL,NULL,13600,'ARS',17600,69,false,false,true,NULL,141),
 ('prov26-142','cat2-42-bolsas-de-residuo-mitobicel-en-rollitos-fondo-estrel','Bolsas de residuo MITOBICEL en rollitos fondo estrella en caja','ROLLO FONDO ESTRELLA — RESIDUO/CONSORCIO','50×70','Caja · 24 rollos/caja · 20 bolsas/rollo',NULL,NULL,NULL,NULL,NULL,17050,'ARS',21050,69,false,false,true,NULL,142),
@@ -167,7 +160,7 @@ VALUES
 ('prov26-153','cat2-45-bolsas-de-consorcio-mitobicel-en-rollito-fondo-estre','Bolsas de consorcio MITOBICEL en rollito fondo estrella en bulto','ROLLO FONDO ESTRELLA — RESIDUO/CONSORCIO','80×110','Caja (así figura el precio) · 20 rollos/bulto · 10 bolsas/rollo',NULL,NULL,NULL,NULL,NULL,22300,'ARS',26300,73,false,false,true,NULL,153),
 ('prov26-154','cat2-46-resmas-de-papel-alcalino-hp','Resmas de papel alcalino HP','PAPEL A4, ESCOMBROS Y SERVILLETAS','A4 · 21×29,7 cm · 75 g','Caja · 10 resmas/caja',NULL,NULL,NULL,NULL,NULL,58950,'ARS',62950,74,false,false,true,NULL,154),
 ('prov26-155','cat2-47-bolsas-de-escombro-a-granel','Bolsas de escombro a granel','PAPEL A4, ESCOMBROS Y SERVILLETAS','50×70 · 110 micrones','Bulto · 100 unidades/bulto',NULL,NULL,NULL,NULL,NULL,20600,'ARS',24600,75,false,false,true,NULL,155),
-('prov26-156','cat2-47-bolsas-de-escombro-a-granel','Bolsas de escombro a granel','PAPEL A4, ESCOMBROS Y SERVILLETAS','50×70 · 110 micrones','Paquete · 10 bolsas a granel',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2700,75,true,false,true,NULL,156),
+('prov26-156','cat2-47-bolsas-de-escombro-a-granel','Bolsas de escombro a granel','PAPEL A4, ESCOMBROS Y SERVILLETAS','50×70 · 110 micrones','Paquete · 10 bolsas a granel',NULL,NULL,NULL,NULL,NULL,2700,'ARS',2700,75,false,false,true,NULL,156),
 ('prov26-157','cat2-48-servilletas-new-pel-papel-alcalino-tissue-extra-suav','Servilletas NEW PEL, papel alcalino tissue extra suave','PAPEL A4, ESCOMBROS Y SERVILLETAS','33×33 cm','Caja · 1.000 unidades/caja · peso 1,680 kg',NULL,NULL,NULL,NULL,NULL,7500,'ARS',11500,76,false,false,true,NULL,157),
 ('prov26-158','cat2-49-servilletas-alumax-papel-alcalino-tissue-extra-suave','Servilletas ALUMAX, papel alcalino tissue extra suave','PAPEL A4, ESCOMBROS Y SERVILLETAS','33×33 cm','Caja · 500 unidades/caja · peso 920 g',NULL,NULL,NULL,NULL,NULL,6500,'ARS',10500,77,false,false,true,NULL,158),
 ('prov26-159','cat2-50-carteles-estallidos-atado-10-paquetes-20-unidades','Carteles estallidos · atado 10 paquetes × 20 unidades','CARTELES ESTALLIDOS','6×4 cm','Bulto/atado · 200 unidades · 10 paquetes × 20 unidades',NULL,NULL,NULL,NULL,NULL,2600,'ARS',6600,78,false,false,true,NULL,159),
@@ -179,15 +172,42 @@ VALUES
 ('prov26-165','cat2-51-carteles-estallidos-atado-10-paquetes-10-unidades','Carteles estallidos · atado 10 paquetes × 10 unidades','CARTELES ESTALLIDOS','16×22 cm','Bulto/atado · 100 unidades · 10 paquetes × 10 unidades',NULL,NULL,NULL,NULL,NULL,11450,'ARS',15450,79,false,false,true,NULL,165),
 ('prov26-166','cat2-51-carteles-estallidos-atado-10-paquetes-10-unidades','Carteles estallidos · atado 10 paquetes × 10 unidades','CARTELES ESTALLIDOS','20×30 cm','Bulto/atado · 100 unidades · 10 paquetes × 10 unidades',NULL,NULL,NULL,NULL,NULL,19500,'ARS',23500,79,false,false,true,NULL,166),
 ('prov26-167','cat2-51-carteles-estallidos-atado-10-paquetes-10-unidades','Carteles estallidos · atado 10 paquetes × 10 unidades','CARTELES ESTALLIDOS','24×32 cm','Bulto/atado · 100 unidades · 10 paquetes × 10 unidades',NULL,NULL,NULL,NULL,NULL,25000,'ARS',29000,79,false,false,true,NULL,167),
-('prov26-168','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','6×4 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',300,80,true,false,true,NULL,168),
-('prov26-169','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','6×8 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',400,80,true,false,true,NULL,169),
-('prov26-170','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','7×9 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',450,80,true,false,true,NULL,170),
-('prov26-171','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','8×11 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',650,80,true,false,true,NULL,171),
-('prov26-172','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','10×13 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',950,80,true,false,true,NULL,172),
-('prov26-173','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','11×16 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',1250,80,true,false,true,NULL,173),
-('prov26-174','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','16×22 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',1250,81,true,false,true,NULL,174),
-('prov26-175','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','20×30 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2100,81,true,false,true,NULL,175),
-('prov26-176','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','24×32 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,NULL,'ARS',2700,81,true,false,true,NULL,176)
+('prov26-168','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','6×4 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,300,'ARS',300,80,false,false,true,NULL,168),
+('prov26-169','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','6×8 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,400,'ARS',400,80,false,false,true,NULL,169),
+('prov26-170','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','7×9 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,450,'ARS',450,80,false,false,true,NULL,170),
+('prov26-171','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','8×11 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,650,'ARS',650,80,false,false,true,NULL,171),
+('prov26-172','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','10×13 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,950,'ARS',950,80,false,false,true,NULL,172),
+('prov26-173','cat2-52-carteles-estallidos-paquete-suelto-20-unidades','Carteles estallidos · paquete suelto 20 unidades','CARTELES ESTALLIDOS','11×16 cm','Paquete · 20 unidades',NULL,NULL,NULL,NULL,NULL,1250,'ARS',1250,80,false,false,true,NULL,173),
+('prov26-174','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','16×22 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,1250,'ARS',1250,81,false,false,true,NULL,174),
+('prov26-175','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','20×30 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,2100,'ARS',2100,81,false,false,true,NULL,175),
+('prov26-176','cat2-53-carteles-estallidos-paquete-suelto-10-unidades','Carteles estallidos · paquete suelto 10 unidades','CARTELES ESTALLIDOS','24×32 cm','Paquete · 10 unidades',NULL,NULL,NULL,NULL,NULL,2700,'ARS',2700,81,false,false,true,NULL,176)
 ON CONFLICT (id) DO NOTHING;
+
+-- Correccion retroactiva SEGURA: solo completar 14 precios que quedaron pendientes
+-- por la regla incorrecta anterior, sin sobrescribir precios editados manualmente.
+UPDATE public.catalog_full_items AS dest
+SET price_list=correction.price_list,requires_quote=false
+FROM (VALUES
+ ('prov26-117',365,365),
+ ('prov26-137',2870,2870),
+ ('prov26-138',2870,2870),
+ ('prov26-139',2550,2550),
+ ('prov26-156',2700,2700),
+ ('prov26-168',300,300),
+ ('prov26-169',400,400),
+ ('prov26-170',450,450),
+ ('prov26-171',650,650),
+ ('prov26-172',950,950),
+ ('prov26-173',1250,1250),
+ ('prov26-174',1250,1250),
+ ('prov26-175',2100,2100),
+ ('prov26-176',2700,2700)
+) AS correction(id,original_price,price_list)
+WHERE dest.id=correction.id
+  AND dest.currency='ARS'
+  AND dest.price_list IS NULL
+  AND dest.requires_quote=true
+  AND dest.source_original_price=correction.original_price;
+
 COMMIT;
 SELECT count(*) AS catalogo_2_importados FROM public.catalog_full_items WHERE id LIKE 'prov26-%';

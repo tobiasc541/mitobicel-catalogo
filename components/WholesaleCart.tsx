@@ -54,7 +54,7 @@ export default function WholesaleCart({lines,onQuantity,onRemove}:{
      <button type="button" aria-label={'Restar '+line.title} onClick={()=>onQuantity(line.key,Math.max(1,line.quantity-1))}>−</button>
      <input type="number" min={1} max={9999} value={line.quantity} aria-label={'Cantidad de '+line.title} onChange={e=>onQuantity(line.key,Math.max(1,Math.min(9999,Math.floor(Number(e.target.value)||1))))}/>
      <button type="button" aria-label={'Sumar '+line.title} onClick={()=>onQuantity(line.key,Math.min(9999,line.quantity+1))}>+</button>
-     <span>{line.unit}{line.quantity!==1?'s':''}</span>
+     <span>{line.unit}{line.unit==='kg'?'':line.quantity!==1?'s':''}</span>
      <button type="button" className="cart-remove" onClick={()=>onRemove(line.key)} aria-label={'Quitar '+line.title}>×</button>
     </div>
    </div>)}</div>
