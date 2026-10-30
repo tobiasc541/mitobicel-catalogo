@@ -1,7 +1,8 @@
 -- MITOBICEL | Catálogo 2: completo para clientes habituales
 -- Ejecutar una vez SOLO en el proyecto Supabase del catálogo MITOBICEL.
 -- No modifica ni elimina registros de public.catalog_items, catalog_offers o admin_users.
--- Los dos catálogos pueden tener precios y presentaciones diferentes.
+-- Los dos catálogos pueden tener precios y presentaciones diferentes. 
+-- Precio de lista separado de retiro y envío, para evitar asumir una modalidad de venta.
 
 create table if not exists public.catalog_full_items (
   id text primary key,
@@ -92,20 +93,15 @@ begin
   end if;
 end $do$;
 
--- Copiar UNA SOLA VEZ el catálogo base, incluidas fotos y precios,
--- para que el Catálogo 2 empiece con lo que ya existe.
--- Las futuras ediciones serán INDEPENDIENTES.
-insert into public.catalog_full_items (
-  id, category, title, subtitle, measure, presentation,
-  packages, bags_per_roll, units_per_box, price_pickup,
-  price_delivery, featured, enabled, image_url, position
-)
-select
-  id, category, title, subtitle, measure, presentation,
-  packages, bags_per_roll, units_per_box, price_pickup,
-  price_delivery, featured, enabled, image_url, position
-from public.catalog_items
-on conflict(id) do nothing;
+-- El Catálogo 2 se inicia exclusivamente con la lista completa Provincias; no se duplican los 15 productos del Catálogo 1.
+
+-- Columnas adicionales de la lista completa (aditivo, compatible con tabla existente).
+ALTER TABLE public.catalog_full_items
+  ADD COLUMN IF NOT EXISTS price_list numeric(14,2) check (price_list is null or price_list >= 0),
+  ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'ARS',
+  ADD COLUMN IF NOT EXISTS source_original_price numeric(14,2),
+  ADD COLUMN IF NOT EXISTS source_page integer,
+  ADD COLUMN IF NOT EXISTS requires_quote boolean NOT NULL DEFAULT false;
 
 -- Comprobación: no debe modificar la cantidad de registros del Catálogo 1.
 select

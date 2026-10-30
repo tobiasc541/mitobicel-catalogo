@@ -405,3 +405,20 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  .full-admin-add-form{grid-template-columns:1fr}
  .full-catalog-admin .edit-actions{justify-content:flex-start}
 }
+
+/* MITOBICEL · Catálogo 2 · listado Provincias 26/10/2026 */
+.full-catalog-app .product-grid,.full-catalog-app .product-card,.full-catalog-app .table-scroller{min-width:0}
+.full-catalog-notice{max-width:850px;margin:0 auto 21px;padding:15px 19px;border:1px solid #cbe4d4;border-radius:14px;background:#edf9f2;text-align:center;color:#28583d;font-size:12px;line-height:1.75}
+.full-catalog-notice strong{color:#075b2a}
+.full-catalog-app .product-head h3{overflow-wrap:anywhere}
+.full-catalog-app .product-card .price-list{font-weight:900;color:#00753e}
+.full-catalog-app .product-card .price-list small{font-weight:500;font-size:10px;color:#9b5d06}
+.full-catalog-admin .catalog-2-import{border:1px solid #c2e4d0;background:linear-gradient(140deg,#f8fff9,#eff8f1);display:flex;align-items:flex-start;flex-direction:column;gap:11px}
+.full-catalog-admin .catalog-2-import p{font-size:12px;line-height:1.8;margin:0;max-width:850px}
+.full-catalog-admin .catalog-2-import small{font-size:11px;color:#638270;line-height:1.7}
+.full-catalog-admin .catalog-2-import .btn{min-height:46px}
+.catalog-2-progress{width:100%;max-width:650px;height:12px;background:#d3e7d9;overflow:hidden;border-radius:30px}
+.catalog-2-progress>div{height:100%;background:linear-gradient(90deg,#047832,#28bc6c);transition:width .25s ease}
+.catalog-provenance{display:flex;align-items:center;gap:6px;padding:9px 11px;background:#f4f9f5;border-radius:10px;align-self:center;color:#54745c;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+@media(min-width:761px){.full-catalog-app .product-card .table-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}.full-catalog-app .product-card table{min-width:630px}}
+@media(max-width:760px){.full-catalog-notice{font-size:11px;margin-bottom:15px;padding:12px}.full-catalog-app .product-card table{max-width:100%}.full-catalog-admin .catalog-2-import{padding:18px 14px}.catalog-provenance{grid-column:1/-1}}

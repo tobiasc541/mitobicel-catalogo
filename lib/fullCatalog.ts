@@ -15,6 +15,11 @@ export type FullCatalogItem={
  units_per_box:number|null;
  price_pickup:number|null;
  price_delivery:number|null;
+ price_list?:number|null;
+ currency?:'ARS'|'USD';
+ source_original_price?:number|null;
+ source_page?:number|null;
+ requires_quote?:boolean;
  featured:boolean;
  enabled:boolean;
  image_url?:string|null;
@@ -47,10 +52,20 @@ export const itemPresentation=(item:FullCatalogItem)=>{
  return parts.join(' · ');
 };
 
-export const orderUnit=(presentation:string):'bulto'|'caja'|'combo'|'rollo'|'paquete'=>{
+export const orderUnit=(presentation:string):'bulto'|'caja'|'combo'|'rollo'|'paquete'|'kg'|'unidad'|'tubo'=>{
  const p=presentation.toLowerCase();
+ if(p.includes('por kg')||p.includes('/kg'))return 'kg';
+ if(p.includes('unidad'))return 'unidad';
+ if(p.includes('tubo'))return 'tubo';
  if(p.includes('caja'))return 'caja';
  if(p.includes('rollo'))return 'rollo';
  if(p.includes('paquete'))return 'paquete';
  return 'bulto';
+};
+
+export const formatCatalogPrice=(value:number|null|undefined,currency:'ARS'|'USD'='ARS')=>{
+ if(value===null||value===undefined||!Number.isFinite(value))return 'A confirmar';
+ return new Intl.NumberFormat('es-AR',{
+  style:'currency',currency,maximumFractionDigits:2,minimumFractionDigits:0
+ }).format(value);
 };

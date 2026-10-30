@@ -2,20 +2,24 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {getDb,getDbConfigIssue} from '@/lib/client';
 import {Icon} from '@/components/Visuals';
+import seedData from '@/data/catalogo2.provincias.26-10.json';
 import {
  FULL_CATALOG_TABLE,FULL_CATALOG_PATH,FULL_CATALOG_ADMIN_PATH,
- itemPresentation,makeCategorySlug,type FullCatalogItem
+ itemPresentation,makeCategorySlug,formatCatalogPrice,type FullCatalogItem
 } from '@/lib/fullCatalog';
 
 const numberOrNull=(value:string)=>value.trim()===''?null:Number(value);
 const maxUpload=3*1024*1024;
+const initialCatalog=seedData as FullCatalogItem[];
 
 export default function FullCatalogAdmin(){
  const [authorized,setAuthorized]=useState(false);
  const [checking,setChecking]=useState(true);
  const [email,setEmail]=useState('');
  const [password,setPassword]=useState('');
- const [items,setItems]=useState<FullCatalogItem[]>([]);
+ const [items,setItems]=useState<FullCatalogItem[]>(initialCatalog);
+ const [syncedCount,setSyncedCount]=useState(0);
+ const [importProgress,setImportProgress]=useState<number|null>(null);
  const [error,setError]=useState('');
  const [message,setMessage]=useState('');
  const [saving,setSaving]=useState(false);
@@ -39,15 +43,24 @@ export default function FullCatalogAdmin(){
   const {data,error:fetchError}=await client.from(FULL_CATALOG_TABLE).select('*').order('position',{ascending:true});
   if(request!==fetchVersion.current)return;
   if(fetchError){
-   setError('La tabla Catálogo 2 no está disponible: '+fetchError.message+'. Ejecutá supabase/catalogo_2.sql en el proyecto MITOBICEL.');
+   setError('La tabla Catálogo 2 no está disponible: '+fetchError.message+'. Ejecutá supabase/catalogo_2_setup_y_carga.sql en el proyecto MITOBICEL.');
    return;
   }
   setError('');
+  const remote=(data||[]) as FullCatalogItem[];
+  const imported=new Set(remote.filter(row=>row.id.startsWith('prov26-')).map(row=>row.id));
+  setSyncedCount(imported.size);
   setItems(previous=>{
-   const byId=new Map(previous.map(x=>[x.id,x]));
-   return ((data||[]) as FullCatalogItem[]).map(remote=>
-    dirty.current.has(remote.id)?byId.get(remote.id)||remote:remote
-   );
+   const local=new Map(previous.map(row=>[row.id,row]));
+   const combined=new Map(initialCatalog.map(row=>[row.id,row]));
+   const extras:FullCatalogItem[]=[];
+   for(const row of remote){
+    if(combined.has(row.id))
+     combined.set(row.id,dirty.current.has(row.id)?local.get(row.id)||row:row);
+    else if(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(row.id))
+     extras.push(dirty.current.has(row.id)?local.get(row.id)||row:row);
+   }
+   return [...combined.values(),...extras].sort((a,b)=>a.position-b.position);
   });
  },[]);
 
@@ -123,6 +136,9 @@ export default function FullCatalogAdmin(){
    measure:item.measure,presentation:item.presentation,
    packages:item.packages,bags_per_roll:item.bags_per_roll,units_per_box:item.units_per_box,
    price_pickup:item.price_pickup,price_delivery:item.price_delivery,
+   price_list:item.price_list??null,currency:item.currency||'ARS',
+   source_original_price:item.source_original_price??null,source_page:item.source_page??null,
+   requires_quote:item.requires_quote??false,
    enabled:item.enabled,featured:item.featured,image_url:item.image_url??null,position:item.position
   }).eq('id',item.id).select('*').maybeSingle();
   if(saveError||!data){
@@ -146,7 +162,7 @@ export default function FullCatalogAdmin(){
   setSaving(true);setMessage('');
   const item:FullCatalogItem={
    ...template,id:crypto.randomUUID(),measure:newSize.trim(),
-   price_pickup:null,price_delivery:null,enabled:true,featured:false,
+   price_pickup:null,price_delivery:null,price_list:null,requires_quote:true,source_original_price:null,source_page:null,enabled:true,featured:false,
    position:Math.max(0,...items.map(x=>x.position))+1
   };
   const {data,error:insertError}=await db.from(FULL_CATALOG_TABLE).insert(item).select('*').maybeSingle();
@@ -169,7 +185,7 @@ export default function FullCatalogAdmin(){
    id:crypto.randomUUID(),category:slug,title:newTitle.trim(),subtitle:newSubtitle.trim(),
    measure:newMeasure.trim(),presentation:newPresentation.trim()||'Bulto',
    packages:null,bags_per_roll:null,units_per_box:null,
-   price_pickup:null,price_delivery:null,featured:false,enabled:true,image_url:null,
+   price_pickup:null,price_delivery:null,price_list:null,currency:'ARS',source_original_price:null,source_page:null,requires_quote:true,featured:false,enabled:true,image_url:null,
    position:Math.max(0,...items.map(x=>x.position))+1
   };
   const {data,error:insertError}=await db.from(FULL_CATALOG_TABLE).insert(item).select('*').maybeSingle();
@@ -181,6 +197,34 @@ export default function FullCatalogAdmin(){
    await load();
   }
   setSaving(false);
+ }
+
+ async function importPreparedCatalog(){
+  if(!db||!authorized)return;
+  if(error){setMessage('Primero ejecutá el SQL de configuración en Supabase para crear la tabla del Catálogo 2.');return;}
+  setSaving(true);setImportProgress(0);setMessage('');
+  try{
+   const {data:existing,error:queryError}=await db.from(FULL_CATALOG_TABLE).select('id');
+   if(queryError)throw queryError;
+   const known=new Set((existing||[]).map(row=>row.id));
+   const missing=initialCatalog.filter(row=>!known.has(row.id));
+   if(!missing.length){
+    setMessage('Las 176 presentaciones ya están en Supabase. No se sobreescribieron precios existentes.');
+   }else{
+    for(let i=0;i<missing.length;i+=20){
+     const batch=missing.slice(i,i+20);
+     const {error:batchError}=await db.from(FULL_CATALOG_TABLE).upsert(batch,{onConflict:'id',ignoreDuplicates:true});
+     if(batchError)throw batchError;
+     setImportProgress(Math.min(100,Math.round((i+batch.length)/missing.length*100)));
+    }
+    setMessage('Se sincronizaron las presentaciones faltantes del Catálogo 2. Los cambios posteriores en el admin permanecen independientes.');
+   }
+   await load();
+  }catch(err){
+   setMessage('No se pudo terminar la importación: '+(err instanceof Error?err.message:String(err))+'. Las filas ya importadas permanecen guardadas; podés reintentar.');
+  }finally{
+   setSaving(false);setImportProgress(null);
+  }
  }
 
  async function removeRow(item:FullCatalogItem){
@@ -247,14 +291,25 @@ export default function FullCatalogAdmin(){
       <a href={FULL_CATALOG_PATH} className="admin-catalog-preview" target="_blank" rel="noopener noreferrer">Vista pública ↗</a>
      </div>
      <div className="admin-summary">
-      <div><strong>{items.length}</strong><span>Presentaciones</span></div>
+      <div><strong>{items.length}</strong><span>Presentaciones en catálogo</span></div>
       <div><strong>{groups.length}</strong><span>Líneas de producto</span></div>
-      <div><strong>{items.filter(x=>x.enabled).length}</strong><span>Publicadas</span></div>
+      <div><strong>{syncedCount}/176</strong><span>Sincronizadas en Supabase</span></div>
       <button type="button" className="btn dark" onClick={()=>void logout()}>Cerrar sesión</button>
      </div>
      {error&&<div className="admin-warning" role="alert"><strong>Falta activar la base de Catálogo 2.</strong><p>{error}</p></div>}
+     <section className="panel catalog-2-import">
+      <span className="overline">CATÁLOGO COMPLETO · LISTA PROVINCIAS 26/10</span>
+      <h2>176 presentaciones preparadas con precios de lista</h2>
+      <p>144 precios en pesos con $4.000 de descuento. 18 importes USD conservados en dólares. 14 precios menores a $4.000 quedaron para consultar, porque el descuento daría un importe negativo.</p>
+      <p>La web de clientes ya muestra las 176 variantes desde su versión publicada. Para editarlas y guardarlas en la base, sincronizalas con Supabase. Esta importación <strong>solo incorpora registros faltantes</strong> y nunca pisa precios que ya modificaste.</p>
+      <button className="btn green" type="button" disabled={saving||!!error||syncedCount>=176} onClick={()=>void importPreparedCatalog()}>
+       {saving&&importProgress!==null?'Importando '+importProgress+'%':syncedCount>=176?'176 productos sincronizados ✓':'Importar productos faltantes a Supabase'}
+      </button>
+      {importProgress!==null&&<div className="catalog-2-progress" role="status"><div style={{width:importProgress+'%'}}/></div>}
+      <small>Si aparece «Falta activar la base», ejecutá primero <code>supabase/catalogo_2_setup_y_carga.sql</code> en el proyecto MITOBICEL.</small>
+     </section>
      <section className="panel"><span className="overline">CREAR PRODUCTOS</span><h2>Agregar nuevas líneas al Catálogo 2</h2>
-      <p>Preparado para cargar todas las líneas del PDF. También podés añadir productos y medidas manualmente.</p>
+      <p>Las líneas del PDF ya están preparadas. También podés añadir productos y medidas nuevos desde aquí.</p>
       <form className="full-admin-add-form" onSubmit={addNewLine}>
        <label>Producto o línea<input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Ej. Bolsas consorcio" required/></label>
        <label>Subtítulo<input value={newSubtitle} onChange={e=>setNewSubtitle(e.target.value)} placeholder="Ej. Línea industrial"/></label>
@@ -274,7 +329,7 @@ export default function FullCatalogAdmin(){
      <section className="panel"><div className="section-top"><div><span className="overline">EDICIÓN RÁPIDA · SOLO CATÁLOGO 2</span><h2>Productos, precios y presentaciones</h2>
       <p>Los cambios pendientes se conservan mientras escribís. Cada precio se publica en el Catálogo 2 al presionar «Guardar medida».</p>
      </div></div>
-      {!error&&groups.length===0&&<p>No hay productos todavía. Creá una línea o ejecutá el SQL inicial para copiar los productos del primer catálogo.</p>}
+      {!error&&groups.length===0&&<p>Creá una línea para comenzar.</p>}
       {groups.map(group=><div key={group.category} className="admin-category">
        <div className="category-admin-header"><div><h3>{group.items[0].title}</h3><p>Imagen para todas las medidas de esta línea en Catálogo 2</p></div>
         <label className="btn white upload-control"><Icon name="upload"/> Elegir imagen<input type="file" accept="image/png,image/jpeg,image/webp" disabled={saving} onChange={e=>{void uploadCategoryImage(group.category,e.target.files?.[0]);e.currentTarget.value='';}}/></label>
@@ -285,12 +340,15 @@ export default function FullCatalogAdmin(){
          <label>Subtítulo<input value={item.subtitle} onChange={e=>patch(item.id,'subtitle',e.target.value)}/></label>
          <label>Presentación<input value={item.presentation} onChange={e=>patch(item.id,'presentation',e.target.value)}/></label>
          <label>Medida<input value={item.measure} onChange={e=>patch(item.id,'measure',e.target.value)}/></label>
+         <label>Precio de lista<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_list??''} onChange={e=>{patch(item.id,'price_list',numberOrNull(e.target.value));patch(item.id,'requires_quote',!e.target.value.trim());}} placeholder="A confirmar"/></label>
+         <label>Moneda<select value={item.currency||'ARS'} onChange={e=>patch(item.id,'currency',e.target.value as 'ARS'|'USD')}><option value="ARS">Pesos argentinos (ARS)</option><option value="USD">Dólares (USD)</option></select></label>
          <label>Retiro por fábrica $<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_pickup??''} onChange={e=>patch(item.id,'price_pickup',numberOrNull(e.target.value))} placeholder="Sin cargar"/></label>
          <label>Con envío $<input type="number" inputMode="decimal" min="0" step="0.01" value={item.price_delivery??''} onChange={e=>patch(item.id,'price_delivery',numberOrNull(e.target.value))} placeholder="Sin cargar"/></label>
          <label>{item.category==='arranque'?'Rollos/bulto':'Paquetes/bulto'}<input type="number" min="0" value={item.packages??''} onChange={e=>patch(item.id,'packages',numberOrNull(e.target.value))}/></label>
          <label>Bolsas por rollito<input type="number" min="0" value={item.bags_per_roll??''} onChange={e=>patch(item.id,'bags_per_roll',numberOrNull(e.target.value))}/></label>
          <label>Unidades por caja<input type="number" min="0" value={item.units_per_box??''} onChange={e=>patch(item.id,'units_per_box',numberOrNull(e.target.value))}/></label>
          <label>Orden<input type="number" min="0" value={item.position} onChange={e=>patch(item.id,'position',Number(e.target.value)||0)}/></label>
+         <div className="catalog-provenance">Origen: {item.source_page?'página '+item.source_page+' del PDF':'agregado desde el admin'} · Precio original: {formatCatalogPrice(item.source_original_price,item.currency||'ARS')}</div>
         </div>
         <div className="edit-actions">
          <label><input type="checkbox" checked={item.enabled} onChange={e=>patch(item.id,'enabled',e.target.checked)}/> Visible</label>
