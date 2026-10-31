@@ -796,3 +796,57 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .raffle-admin-activation-actions button{flex:1;min-width:180px;min-height:51px}
 .raffle-admin-activation-actions .raffle-cta-secondary{background:#fff;border:1px solid #c4dccc;border-radius:12px;padding:13px;color:#0a683e;font-weight:800;font-size:12px}
 @media(max-width:550px){.raffle-admin-activation-actions{flex-direction:column}.raffle-admin-activation-actions button{width:100%}}
+
+/* MITOBICEL sorteos · seis premios coloridos, legibles, interactivos y compactos */
+.raffle-prizes{padding-top:45px;padding-bottom:48px}
+.raffle-prize-grid{gap:14px;margin-top:21px}
+.raffle-prize-card{cursor:pointer;text-align:left;border-width:1px;border-style:solid;min-height:224px;padding:22px 21px;outline-offset:4px;overflow:hidden;isolation:isolate;position:relative;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.raffle-prize-card:focus-visible{outline:3px solid #08773e}
+.raffle-prize-card::before{content:'';position:absolute;right:-36px;top:-43px;width:145px;height:145px;border-radius:100%;background:#ffffff50;pointer-events:none;transition:transform .3s ease}
+.raffle-prize-card:hover::before,.raffle-prize-card.is-selected::before{transform:scale(1.28)}
+.raffle-prize-card:hover,.raffle-prize-card.is-selected{transform:translateY(-4px);box-shadow:0 17px 32px #0b352021}
+.raffle-prize-card:nth-child(1){background:#fff1d5;border-color:#edcb81}
+.raffle-prize-card:nth-child(2){background:#e4f8e8;border-color:#8ed5a2}
+.raffle-prize-card:nth-child(3){background:#dff1ff;border-color:#9ac4e8}
+.raffle-prize-card:nth-child(4){background:#ffe6e5;border-color:#efb5b1}
+.raffle-prize-card:nth-child(5){background:#ede6ff;border-color:#c5a9f0}
+.raffle-prize-card:nth-child(6){background:#ffe9d7;border-color:#edb68d}
+.raffle-prize-card:nth-child(1) .raffle-prize-icon{background:#ffdf89;color:#83540f}
+.raffle-prize-card:nth-child(2) .raffle-prize-icon{background:#c7edca;color:#147e40}
+.raffle-prize-card:nth-child(3) .raffle-prize-icon{background:#c6e3fa;color:#236da4}
+.raffle-prize-card:nth-child(4) .raffle-prize-icon{background:#ffd0ce;color:#af343a}
+.raffle-prize-card:nth-child(5) .raffle-prize-icon{background:#dcccf8;color:#6c3ba6}
+.raffle-prize-card:nth-child(6) .raffle-prize-icon{background:#ffcfab;color:#a85c21}
+.raffle-prize-card .raffle-prize-index{color:#365b48;font-size:10px;z-index:1}
+.raffle-prize-card .raffle-prize-description{color:#2c4034;position:relative}
+.raffle-prize-card .raffle-prize-purpose{border-top:1px solid #2b584a22;margin:10px 0;padding-top:10px;color:#21442d;font-weight:700}
+.raffle-prize-card .raffle-prize-more{display:block;font-size:10px;font-weight:900;line-height:1.4;color:#116339;margin-top:9px;margin-bottom:11px;position:relative}
+.raffle-prize-card small{color:#5d7666;font-size:9px;line-height:1.5}
+.raffle-mini-thanks{width:calc(100% - 34px);max-width:930px;margin:0 auto 22px;border:1px solid #bbddc5;background:linear-gradient(120deg,#e7f7eb,#f4fbf4);border-radius:18px;padding:17px 24px;display:flex;align-items:center;justify-content:center;gap:16px}
+.raffle-mini-thanks-heart{height:38px;width:38px;border-radius:12px;display:grid;place-items:center;color:#ce1633;background:#ffe5ea;flex:none}
+.raffle-mini-thanks svg{height:20px;width:20px}
+.raffle-mini-thanks p{font-size:12px;line-height:1.85;color:#43614a;margin:0}
+.raffle-mini-thanks strong{color:#0f4e2b}
+.raffle-how{padding-top:52px;padding-bottom:56px}
+.raffle-steps{margin-top:27px}
+.raffle-steps article{padding:20px}
+.raffle-register-section{padding-top:67px;padding-bottom:70px}
+.raffle-video-section{padding-top:48px;padding-bottom:48px}
+/* Un único PNG sin caja ni franja blanca, tanto en Catálogo 1 como en Catálogo 2. */
+.app .brand-logo,.full-catalog-app .brand-logo,.site-footer .footer-brand{
+ background:transparent!important;border:0!important;box-shadow:none!important;
+}
+.site-footer .footer-brand{padding:0!important;border-radius:0!important}
+.site-footer .footer-brand img{background:transparent!important;object-fit:contain!important}
+@media(max-width:700px){
+.raffle-prizes{padding-top:36px;padding-bottom:36px}
+.raffle-prize-card{min-height:207px;padding:16px 13px}
+.raffle-prize-card h3{line-height:1.28}
+.raffle-prize-card .raffle-prize-description{line-height:1.5}
+.raffle-mini-thanks{padding:15px 14px;gap:11px}
+.raffle-mini-thanks p{font-size:11px;line-height:1.7}
+.raffle-how{padding-top:45px;padding-bottom:46px}
+}
+@media(prefers-reduced-motion:reduce){
+.raffle-prize-card::before{transition:none}
+}

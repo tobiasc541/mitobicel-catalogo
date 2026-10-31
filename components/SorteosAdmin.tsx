@@ -16,7 +16,7 @@ const local=(s:string)=>s?new Date(s).toLocaleString('sv-SE',{hour12:false}).rep
 const iso=(s:string)=>new Date(s).toISOString();
 const fresh=()=>({
  id:'',period:new Date().toISOString().slice(0,7),title:'Sorteo mensual MITOBICEL',subtitle:'Premios, experiencias y oportunidades para nuestros clientes.',
- store_name:'Temper',prizes:'',starts_at:'',ends_at:'',draw_at:'',
+ store_name:'MITOBICEL 1',prizes:'',starts_at:'',ends_at:'',draw_at:'',
  status:'draft' as 'draft'|'live'|'closed',results_published:false,terms:'',video_url:'',
  video_title:'Conocé las entregas de nuestros premios',
  free_instructions:'Sin obligación de compra: elegí la opción gratuita en el formulario, una participación por persona y mes.'
@@ -24,7 +24,7 @@ const fresh=()=>({
 type Editor=ReturnType<typeof fresh>;
 const publicLink=(code:string)=>typeof window==='undefined'?'':window.location.origin+'/sorteos?codigo='+code;
 const asEditor=(c:Campaign):Editor=>({
- id:c.id,period:c.period,title:c.title,subtitle:c.subtitle,store_name:c.store_name,prizes:(c.prizes||[]).join('\n'),
+ id:c.id,period:c.period,title:c.title,subtitle:c.subtitle,store_name:c.store_name.trim().toLowerCase()==='temper'?'MITOBICEL 1':c.store_name,prizes:(c.prizes||[]).join('\n'),
  starts_at:local(c.starts_at),ends_at:local(c.ends_at),draw_at:local(c.draw_at),
  status:c.status,results_published:c.results_published,terms:c.terms,video_url:c.video_url,
  video_title:c.video_title,free_instructions:c.free_instructions
@@ -112,7 +112,7 @@ export default function SorteosAdmin(){
   setBusy(true);
   const values={
    period:form.period,title:form.title.trim(),subtitle:form.subtitle.trim(),
-   store_name:form.store_name.trim()||'Temper',prizes,
+   store_name:form.store_name.trim()||'MITOBICEL 1',prizes,
    starts_at:dates[0],ends_at:dates[1],draw_at:dates[2],
    status:nextStatus,results_published:form.results_published,
    terms:form.terms.trim(),video_url:form.video_url.trim(),
@@ -128,7 +128,7 @@ export default function SorteosAdmin(){
   if(!db||!form.id||busy)return;
   const count=Math.max(1,Math.min(200,Math.floor(quantity||0)));
   setBusy(true);setError('');setNotice('');
-  const links=Array.from({length:count},()=>({campaign_id:form.id,store_name:form.store_name||'Temper',code:randomCode()}));
+  const links=Array.from({length:count},()=>({campaign_id:form.id,store_name:form.store_name||'MITOBICEL 1',code:randomCode()}));
   const {data,error:e}=await db.from('raffle_codes').insert(links).select('id,code,store_name,used_at,campaign_id');
   if(e)setError(e.message);
   else{
@@ -178,7 +178,7 @@ export default function SorteosAdmin(){
  return <div className="raffle-admin">
   <header className="raffle-admin-header"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><span className="raffle-eyebrow">SOLO PERSONAL AUTORIZADO</span><strong>Centro de Control · Sorteos</strong></div><a href="/sorteos" target="_blank" rel="noopener noreferrer">Ver página pública ↗</a></header>
   <section className="raffle-admin-main">
-   <div className="raffle-admin-banner"><span className="raffle-eyebrow">GESTIÓN DE SORTEOS</span><h1>Volvimos. Y volvimos con todo.</h1><p>Administrá los sorteos de agradecimiento para buscas, papeleras y distribuidores. Comercio autorizado: Temper, Temperley, a una cuadra de la estación. Los catálogos siguen independientes.</p></div>
+   <div className="raffle-admin-banner"><span className="raffle-eyebrow">GESTIÓN DE SORTEOS</span><h1>Volvimos. Y volvimos con todo.</h1><p>Administrá los sorteos de agradecimiento para buscas, papeleras y distribuidores. Comercio autorizado: MITOBICEL 1, Temperley, a una cuadra de la estación. Los catálogos siguen independientes.</p></div>
    {checking?<p>Verificando permisos…</p>:!authorized?<form className="raffle-admin-panel raffle-login" onSubmit={e=>void login(e)}>
     <h2>Ingresá al superadmin</h2><p>Acceso exclusivo con las credenciales del administrador de MITOBICEL.</p>
     <label>Correo electrónico<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username"/></label>
@@ -201,7 +201,7 @@ export default function SorteosAdmin(){
      </div>
      <form className="raffle-admin-form" onSubmit={e=>void save(e)}>
       <label>Mes de la edición<input type="month" required value={form.period} onChange={e=>update('period',e.target.value)}/></label>
-      <label>Comercio autorizado (Temper · Temperley)<input value={form.store_name} onChange={e=>update('store_name',e.target.value)} required/></label>
+      <label>Comercio autorizado (MITOBICEL 1 · Temperley)<input value={form.store_name} onChange={e=>update('store_name',e.target.value)} required/></label>
       <label className="wide">Título<input value={form.title} onChange={e=>update('title',e.target.value)} required/></label>
       <label className="wide">Subtítulo<input value={form.subtitle} onChange={e=>update('subtitle',e.target.value)}/></label>
       <label>Inicio de inscripción<input type="datetime-local" value={form.starts_at} required onChange={e=>update('starts_at',e.target.value)}/></label>
@@ -222,7 +222,7 @@ export default function SorteosAdmin(){
      <p className="raffle-admin-legal">Antes de publicar, revisá las bases con asesoramiento legal: modalidad sin obligación de compra, premios reales, fechas, probabilidad, alcance, privacidad y obligaciones fiscales. No publicar nombres completos ni DNI de participantes.</p>
     </div>
     <div className="raffle-admin-panel" id="talonarios">
-     <h2>Generar QR únicos por bulto · {form.store_name||'Temper'}</h2>
+     <h2>Generar QR únicos por bulto · {form.store_name||'MITOBICEL 1'}</h2>
      <p>Un QR por bulto entregado. Cada código válido se consume al inscribirse. La URL pública permanece fija: <strong>/sorteos</strong>.</p>
      <div className="raffle-admin-qr-actions"><label>Cantidad de nuevos códigos<input type="number" min={1} max={200} value={quantity} onChange={e=>setQuantity(Number(e.target.value))}/></label>
       <button type="button" className="raffle-cta" disabled={!canManage||busy} onClick={()=>void generate()}>Generar códigos</button>
