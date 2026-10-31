@@ -177,3 +177,31 @@ El proyecto Supabase MITOBICEL no figura entre los proyectos conectados a ChatGP
 - Las **18 presentaciones USD** mantienen precio de retiro en USD; envío pendiente de consulta y sin conversión ficticia.
 - La página de clientes y carrito usan las dos columnas y totales de retiro/envío; el fallback local resuelve precios que Supabase aún guarde como NULL sin pisar precios manuales.
 - Para sincronizar la base: ejecutar `supabase/catalogo_2_precio_retiro_envio.sql` en Supabase MITOBICEL o usar la sincronización del superadmin. Todos los UPDATE afectan únicamente `catalog_full_items` y los valores NULL.
+
+
+
+## MITOBICEL Sorteos — tercera página, independiente de ambos catálogos
+
+Rutas:
+- Pública: \`https://mitobicel-catalogo.vercel.app/sorteos\` (sin menú ni enlaces a catálogos).
+- Admin: \`https://mitobicel-catalogo.vercel.app/admin/sorteos\` (mismas credenciales del superadmin; el link no aparece públicamente).
+
+### Activación de Supabase (obligatoria)
+
+En **el proyecto Supabase de MITOBICEL** (no en Pawwise Academy ni en MESA), ejecutar \`supabase/sorteos_mensuales.sql\` desde SQL Editor **una sola vez**. Este SQL crea \`raffle_campaigns\`, \`raffle_codes\`, \`raffle_entries\`, \`raffle_winners\`; habilita RLS; y crea RPCs de inscripción, sorteo y resultados públicos sin publicar DNI completos. No modifica \`catalog_items\`, \`catalog_full_items\`, ofertas, usuarios administrativos ni QR existente.
+
+Las cuentas Supabase conectadas al asistente en esta conversación no incluyen MITOBICEL, por lo que no se ha ejecutado la migración remota y **todavía no hay un sorteo abierto**. No confundir despliegue de Vercel con base de datos activada.
+
+### Cómo empezar
+
+1. Ejecutar SQL y entrar a \`/admin/sorteos\` con credenciales de superadmin.
+2. Crear edición (mes, Temper o comercio autorizado, fechas de apertura, cierre y sorteo). Dejar en **borrador** hasta tener premios reales y bases válidas.
+3. Cargar lista de premios **confirmados**, bases y condiciones que incluyan alcance, fechas, vía gratuita, ganadores, contacto y tratamiento de datos. Publicar edición cuando esté legalmente aprobada.
+4. Generar los **códigos QR únicos por bulto** desde superadmin. \`Imprimir QR por bulto\` produce talonarios. \`Descargar CSV\` genera enlaces únicos; cada cupón puede utilizarse solo una vez. El QR físico conduce a \`/sorteos?codigo=CODIGO\`.
+5. Los participantes pueden registrar nombre, apellido, DNI y teléfono. El DNI queda protegido por RLS, reservado para verificación privada. También existe una vía sin compra (una participación gratuita por persona y edición) y ambas participan de la misma selección.
+6. Después del cierre y la fecha oficial, seleccionar ganador desde superadmin; revisar DNI presentado contra el registrado; publicar resultados y videos de entrega.
+7. Los resultados con nombre parcial y últimos 3 dígitos del DNI se muestran durante un mes a partir del sorteo; la galería de videos/fotos de premios entregados permanece histórica.
+
+La página pública consulta premios, fechas, resultados y entregas cada 60 segundos. El video admite URL YouTube, Vimeo o MP4, con reproductor vertical 9:16.
+
+**Seguridad y cumplimiento:** los cupones se generan con aleatoriedad criptográfica; el canje es atómico en PostgreSQL y no permite reutilización. Las tablas privadas no permiten SELECT público; las RPCs públicas revelan solo información mínima. Como cualquier formulario anónimo, antes de operar campañas grandes, es recomendable poner límites adicionales de tráfico/verificación humana y fijar un período de retención de datos. La legalidad de la promoción, inclusive modalidad sin obligación de compra y la comunicación de premios, fechas y probabilidades, debe ser revisada antes de lanzarla (Decreto 961/2017 y normativa vigente aplicable).
