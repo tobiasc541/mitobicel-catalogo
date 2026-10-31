@@ -870,3 +870,45 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .raffle-art-prize span{font-size:10px;font-weight:900;color:#c9f1d6;letter-spacing:.13em}
 .raffle-confirmed-image{display:block;max-width:250px;width:100%;max-height:230px;object-fit:contain;margin:0 auto 17px;border-radius:14px}
 @media(max-width:600px){.raffle-admin-general-qr{grid-template-columns:1fr;text-align:center;justify-items:center}.raffle-admin-general-qr>div{display:flex;flex-direction:column;align-items:center}.raffle-art-prize{height:220px}.raffle-art-prize img{height:187px}}
+
+/* Sorteos 2026 · Nuevo visual: collage editorial de regalos, sin medalla ni fondo oscuro */
+.raffle-site .raffle-hero-art.raffle-gifts-hero{
+ background:radial-gradient(circle at 50% 37%,#fff 0,#fffdf5 29%,#e8faee 73%,#ddf2e5 100%);
+ border:1px solid #c7e2d1;box-shadow:0 22px 58px #0b4a2820;
+ color:#113b27;justify-content:flex-start;padding:28px 20px 18px;
+ gap:9px;height:500px;min-width:0;isolation:isolate
+}
+.raffle-site .raffle-gifts-hero:before{border:1px solid #5faa7a29;inset:11px}
+.raffle-gifts-logo{width:200px;max-width:70%;height:79px;object-fit:contain;filter:drop-shadow(0 4px 6px #09452120);position:relative;z-index:2}
+.raffle-gifts-ribbon{border:1px solid #c42335;color:#c00820;background:#fff4f4;padding:8px 15px;border-radius:50px;font-size:10px;letter-spacing:.1em;font-weight:950;text-align:center;position:relative;z-index:2}
+.raffle-gifts-stage{width:100%;max-width:420px;flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;align-items:stretch;gap:13px;position:relative;padding:18px 10px}
+.raffle-gifts-stage:before{content:'';position:absolute;width:64%;height:64%;border-radius:100%;background:radial-gradient(circle,#f5fb9f,#f5fb9f00 74%);top:17%;left:18%;filter:blur(9px);opacity:.6}
+.raffle-gifts-tile{background:#fff;border:1px solid #dbe8e2;box-shadow:0 8px 21px #174b2917;border-radius:17px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;color:#1b5836;position:relative;transform:rotate(-3deg);transition:transform .24s ease}
+.raffle-gifts-tile svg{height:47px;width:47px;stroke-width:1.5}
+.raffle-gifts-tile span{font-size:10px;font-weight:900;line-height:1.2}
+.raffle-gifts-mobility{background:linear-gradient(140deg,#d7e9ff,#fff);transform:rotate(-5deg) translateY(2px);color:#2d6199}
+.raffle-gifts-tv{background:linear-gradient(140deg,#ffecd2,#fff);transform:rotate(5deg) translateY(5px);color:#b0681a}
+.raffle-gifts-tech{background:linear-gradient(140deg,#f4deff,#fff);transform:rotate(3deg);color:#884bac}
+.raffle-gifts-home{background:linear-gradient(140deg,#d4f6db,#fff);transform:rotate(-4deg);color:#19854a}
+.raffle-gifts-tile:hover{transform:rotate(0deg) translateY(-4px);z-index:2}
+.raffle-gifts-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:160px;height:158px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:100%;z-index:3;
+ background:linear-gradient(140deg,#e3001b,#b90016);color:#fff;border:8px solid #fff;
+ box-shadow:0 15px 32px #9b001f40,0 0 0 2px #faeab6;}
+.raffle-gifts-center svg{height:49px;width:49px;stroke-width:1.9}
+.raffle-gifts-center strong{font-size:19px;letter-spacing:.02em}
+.raffle-gifts-center span{font-size:8px;font-weight:800;max-width:110px;line-height:1.3}
+.raffle-gifts-foot{font-size:10px;font-weight:900;letter-spacing:.14em;position:relative;z-index:2;color:#246345;line-height:1.5}
+.raffle-gifts-real{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.raffle-gifts-real img{max-width:95%;height:260px;object-fit:contain;filter:drop-shadow(0 14px 14px #08412924)}
+.raffle-gifts-real strong{font-size:10px;color:#197143}
+@media(max-width:700px){
+ .raffle-site .raffle-hero-art.raffle-gifts-hero{height:405px;padding:18px 12px 14px}
+ .raffle-gifts-logo{height:64px;width:170px}
+ .raffle-gifts-ribbon{font-size:9px}
+ .raffle-gifts-stage{gap:8px;padding:12px 5px}
+ .raffle-gifts-center{width:133px;height:131px;border-width:6px}
+ .raffle-gifts-center svg{height:35px;width:35px}
+ .raffle-gifts-center strong{font-size:15px}
+ .raffle-gifts-tile svg{width:36px;height:36px}
+ .raffle-gifts-foot{font-size:8px}
+}

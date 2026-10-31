@@ -9,7 +9,7 @@ type Campaign={
  starts_at:string;ends_at:string;draw_at:string;status:'draft'|'live'|'closed';
  results_published:boolean;terms:string;video_url:string;video_title:string;free_instructions:string;prize_image_url:string
 };
-type Code={id:string;code:string;store_name:string;used_at:string|null;campaign_id:string};
+type Code={id:string;code:string;store_name:string;used_at:string|null;campaign_id:string;buyer_dni?:string|null};
 type Entry={id:string;first_name:string;last_name:string;dni:string;phone:string;entry_type:string;created_at:string;campaign_id:string};
 type Winner={id:string;prize:string;entry_id:string;delivered_at:string|null;delivery_video_url:string;delivery_photo_url:string;drawn_at:string};
 /** Datetime-local is a local wall-clock value (Argentina), not an ISO UTC string.
@@ -51,10 +51,6 @@ const asEditor=(c:Campaign):Editor=>({
  status:c.status,results_published:c.results_published,terms:c.terms,video_url:c.video_url,
  video_title:c.video_title,free_instructions:c.free_instructions,prize_image_url:c.prize_image_url||''
 });
-function randomCode(){
- const bytes=crypto.getRandomValues(new Uint8Array(12));
- return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
-}
 function downloadText(name:string,body:string){
  const file=new Blob([body],{type:'text/csv;charset=utf-8'});
  const url=URL.createObjectURL(file);
@@ -68,7 +64,7 @@ export default function SorteosAdmin(){
  const [campaigns,setCampaigns]=useState<Campaign[]>([]);
  const [form,setForm]=useState<Editor>(fresh);
  const [codes,setCodes]=useState<Code[]>([]),[entries,setEntries]=useState<Entry[]>([]),[winners,setWinners]=useState<Winner[]>([]);
- const [quantity,setQuantity]=useState(25),[drawPrize,setDrawPrize]=useState('');
+ const [buyerDni,setBuyerDni]=useState(''),[drawPrize,setDrawPrize]=useState('');
  const [printed,setPrinted]=useState<Code[]>([]);
  const [qrImage,setQrImage]=useState('');
  const [sharedTerms,setSharedTerms]=useState('');
@@ -98,7 +94,7 @@ export default function SorteosAdmin(){
  async function loadDetails(id:string){
   const d=getDb();if(!d)return;
   const [a,b,c]=await Promise.all([
-   d.from('raffle_codes').select('id,code,store_name,used_at,campaign_id').eq('campaign_id',id).order('created_at',{ascending:false}).limit(1000),
+   d.from('raffle_codes').select('id,code,store_name,used_at,campaign_id,buyer_dni').eq('campaign_id',id).order('created_at',{ascending:false}).limit(1000),
    d.from('raffle_entries').select('id,first_name,last_name,dni,phone,entry_type,created_at,campaign_id').eq('campaign_id',id).order('created_at',{ascending:false}).limit(2000),
    d.from('raffle_winners').select('*').eq('campaign_id',id).order('drawn_at',{ascending:false})
   ]);
@@ -163,16 +159,24 @@ export default function SorteosAdmin(){
  }
  async function generate(){
   if(!db||!form.id||busy)return;
-  const count=Math.max(1,Math.min(200,Math.floor(quantity||0)));
+  const dni=buyerDni.replace(/\D/g,'');
+  if(!/^\d{7,9}$/.test(dni)){setError('Ingresá el DNI del comprador antes de generar su código.');return;}
   setBusy(true);setError('');setNotice('');
-  const links=Array.from({length:count},()=>({campaign_id:form.id,store_name:form.store_name||'MITOBICEL 1',code:randomCode()}));
-  const {data,error:e}=await db.from('raffle_codes').insert(links).select('id,code,store_name,used_at,campaign_id');
-  if(e)setError(e.message);
-  else{
-   const added=(data||[]) as Code[];setPrinted(added);setNotice(count+' códigos de compra generados. Entregá un código diferente por cada compra validada. El QR de entrada siempre es el mismo.');
+  try{
+   const {data,error:e}=await db.rpc('raffle_issue_purchase_code',{
+    p_campaign_id:form.id,p_buyer_dni:dni
+   });
+   if(e)throw e;
+   const issued=String(data||'');
+   if(!/^\d{4}$/.test(issued))throw new Error('La base de datos no devolvió un código de cuatro cifras.');
+   setPrinted([{id:crypto.randomUUID(),campaign_id:form.id,code:issued,store_name:'MITOBICEL 1',buyer_dni:dni,used_at:null}]);
+   setBuyerDni('');
+   setNotice('Código generado: '+issued+'. Entregalo únicamente a la persona cuyo DNI verificaste.');
    await loadDetails(form.id);
-  }
-  setBusy(false);
+  }catch(err){
+   const message=err&&typeof err==='object'&&'message' in err?String(err.message):'No se pudo emitir el código.';
+   setError('Error al emitir código: '+message+'. Si no actualizaste Supabase, ejecutá el SQL de códigos de cuatro cifras.');
+  }finally{setBusy(false);}
  }
  function exportCodes(){
   if(!codes.length)return;
@@ -298,15 +302,15 @@ export default function SorteosAdmin(){
      <p className="raffle-admin-legal">Antes de publicar, revisá las bases con asesoramiento legal: modalidad sin obligación de compra, premios reales, fechas, probabilidad, alcance, privacidad y obligaciones fiscales. No publicar nombres completos ni DNI de participantes.</p>
     </div>
     <div className="raffle-admin-panel" id="talonarios">
-     <h2>Comprobantes de compra · Códigos de un solo uso</h2>
-     <p>El QR siempre es el mismo. Cuando se concreta una compra habilitada, entregá un código textual diferente (uno por participación autorizada). El sistema lo consume al inscribirse; el mismo DNI puede participar nuevamente con otra compra válida, incluso el mismo día.</p>
-     <div className="raffle-admin-qr-actions"><label>Cantidad de nuevos códigos<input type="number" min={1} max={200} value={quantity} onChange={e=>setQuantity(Number(e.target.value))}/></label>
-      <button type="button" className="raffle-cta" disabled={!canManage||busy} onClick={()=>void generate()}>Generar códigos</button>
-      <button type="button" disabled={!codes.length} onClick={exportCodes}>Descargar CSV</button>
-      <button type="button" disabled={!codes.length} onClick={()=>void printQr()}>Imprimir códigos de compra</button>
+     <h2>Código rápido de cuatro números por compra</h2>
+     <p>El QR general no cambia. Después de verificar una compra, ingresá el DNI del comprador y generá su código de <strong>4 números</strong>. Solo sirve con ese DNI y se utiliza una vez. Si vuelve a comprar, generás otro.</p>
+     <div className="raffle-admin-qr-actions"><label>DNI del comprador (verificado en el local)<input inputMode="numeric" type="text" minLength={7} maxLength={9} pattern="[0-9]{7,9}" value={buyerDni} onChange={e=>setBuyerDni(e.target.value.replace(/\D/g,'').slice(0,9))} placeholder="7 a 9 números"/></label>
+      <button type="button" className="raffle-cta" disabled={!canManage||busy||buyerDni.length<7} onClick={()=>void generate()}>Generar 4 números</button>
+      <button type="button" disabled={!codes.length} onClick={exportCodes}>Descargar comprobantes CSV</button>
+      <button type="button" disabled={!codes.length&&!printed.length} onClick={()=>void printQr()}>Imprimir comprobante</button>
      </div>
-     <p className="raffle-admin-hint">Podés imprimir los códigos nuevos o los últimos 100 sin utilizar. Nunca entregues un código antes de verificar la compra. El mismo código no se puede volver a usar.</p>
-     {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'}</small></div>)}</div>}
+     <p className="raffle-admin-hint">Para evitar inscripciones falsas, verificá la venta y el DNI antes de generar los cuatro números. No se crean miles de códigos sin comprador: cada venta confirmada recibe uno nuevo.</p>
+     {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'} · {c.buyer_dni?'DNI terminado en '+c.buyer_dni.slice(-3):'Código anterior'}</small></div>)}</div>}
     </div>
     <div className="raffle-admin-panel"><h2>Participantes de esta edición</h2><p>Los DNI completos son información privada y solo se visualizan acá para verificar a la persona al entregar un premio.</p>
      {entries.length?<div className="raffle-admin-list">{entries.slice(0,200).map(e=><div key={e.id}><strong>{e.first_name} {e.last_name}</strong><span>DNI {e.dni} · {e.phone}</span><small>{e.entry_type==='free'?'Vía gratuita':'QR de comercio'} · {new Date(e.created_at).toLocaleDateString('es-AR')}</small></div>)}</div>:<p>Todavía no hay participaciones registradas.</p>}

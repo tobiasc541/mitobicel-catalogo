@@ -222,3 +222,28 @@ La migración es aditiva, conserva códigos, inscripciones, ganadores y los dato
 - **Fechas**: los campos son datetime-local con conversión explícita de hora local; el admin indica qué fecha debe corregirse en vez de dar un error genérico. La hora se interpreta según el huso horario del navegador que realiza la carga.
 
 Los usuarios no pueden fabricar códigos válidos ni reutilizarlos (transacción SQL atómica con bloqueo de fila). Un QR estático **no verifica por sí solo** que exista una compra; la entrega controlada del código por personal autorizado es el requisito operativo.
+
+
+
+### Corrección de inscripciones + códigos cortos (31/10/2026)
+
+**Instalación:** ejecutar en SQL Editor del proyecto Supabase de MITOBICEL **solo** el archivo
+\`supabase/sorteos_codigos_4_digitos_validacion.sql\`, luego de las migraciones anteriores.
+Esta actualización no altera los datos del Catálogo 1 ni Catálogo 2; conserva los códigos largos y las inscripciones existentes.
+
+**Por qué era difícil inscribirse:**
+1. El formulario aceptaba apellidos de una sola letra pero la base de datos exige al menos dos caracteres. Ahora se valida antes de enviarlo.
+2. El cliente ocultaba las respuestas de error de Supabase porque \`PostgrestError\` no siempre es un objeto \`Error\` nativo. Ahora muestra el detalle apto para el usuario.
+3. La versión anterior solo aceptaba códigos largos (20–40 caracteres); ahora permite códigos de cuatro dígitos y conserva los antiguos.
+
+**Cómo entregar los códigos:**
+- El QR general \`/sorteos\` **no cambia**.
+- Después de comprobar una venta participante, personal autorizado ingresa el **DNI del comprador** en \`/admin/sorteos\` y toca «Generar 4 números».
+- Se emite un código aleatorio de cuatro dígitos **asociado a ese DNI y esa edición**, de un solo uso. Puede volver a generar uno para el mismo DNI si hay otra compra válida, incluso el mismo día.
+- El formulario público exige ese mismo DNI y los cuatro números.
+- Hay un máximo de cinco intentos incorrectos por DNI cada quince minutos. **Cuatro dígitos no son suficientes como único factor de seguridad**; el vínculo con DNI, el control presencial de compra y la protección de intentos son obligatorios.
+- La vía gratuita de participación sigue existiendo conforme a las bases vigentes.
+
+**Pruebas posteriores al SQL:** generar un código con un DNI de prueba autorizado, inscribirlo con un apellido de al menos dos caracteres y comprobar que el código se marque «Utilizado» en el admin. Repetir para confirmar el bloqueo por reutilización. El formulario nunca debe mostrar un éxito antes de recibir una confirmación válida de PostgreSQL.
+
+**Arte:** se reemplazó el antiguo círculo/medalla del hero por una composición editorial más liviana que incluye el logo oficial de MITOBICEL, iconos de movilidad, tecnología, entretenimiento y agradecimiento. La imagen del premio confirmado cargada por el administrador sigue teniendo prioridad visual.

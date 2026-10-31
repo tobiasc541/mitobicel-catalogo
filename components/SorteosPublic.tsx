@@ -38,6 +38,15 @@ function embedUrl(raw:string):string|null{
  }catch{}
  return null;
 }
+function registrationError(err:unknown):string{
+ const e=err&&typeof err==='object'?err as {message?:string;code?:string;hint?:string}:null;
+ const message=e?.message||'No se pudo completar el registro.';
+ if(e?.code==='PGRST202'||/could not find the function/i.test(message))
+  return 'La función de inscripción necesita actualizarse. Avisá al personal de MITOBICEL 1 para que revise la configuración.';
+ if(e?.code==='42501')return 'La inscripción está bloqueada por permisos de la base de datos. Avisá al comercio.';
+ if(e?.code==='23514')return 'El formato del código no coincide con el permitido. Solicitá un código nuevo en MITOBICEL 1.';
+ return message.length>220?message.slice(0,220)+'…':message;
+}
 function Video({url,title}:{url:string;title:string}){
  const embed=embedUrl(url);
  let direct=false;
@@ -89,19 +98,30 @@ export default function SorteosPublic(){
  async function submit(e:React.FormEvent){
   e.preventDefault();setReceipt('');setProblem('');
   if(!campaign||!open)return;
-  if(!free&&!/^[A-Z0-9]{20,40}$/.test(code.trim().toUpperCase())){setProblem('Ingresá el código de compra válido que te entregaron en MITOBICEL 1.');return;}
+  const first=firstName.trim(),last=lastName.trim(),doc=dni.replace(/\D/g,''),tel=phone.trim();
+  if(first.length<2){setProblem('Escribí tu nombre completo: al menos dos letras.');return;}
+  if(last.length<2){setProblem('Escribí tu apellido completo: al menos dos letras.');return;}
+  if(!/^\d{7,9}$/.test(doc)){setProblem('Ingresá un DNI válido de 7 a 9 números.');return;}
+  if(tel.length<8){setProblem('Ingresá tu teléfono con código de área.');return;}
+  if(!accept){setProblem('Aceptá las bases y condiciones de la edición.');return;}
+  const token=code.trim().toUpperCase();
+  if(!free&&!(/^\d{4}$/.test(token)||/^[A-Z0-9]{20,40}$/.test(token))){
+   setProblem('El código nuevo tiene cuatro números. Usá el que te entregaron en el local.');return;
+  }
   const db=getDb();if(!db){setProblem('No se pudo conectar con la inscripción.');return;}
   setSending(true);
   try{
    const {data,error}=await db.rpc('raffle_register',{
-    p_campaign_id:campaign.id,p_code:free?'':code.trim().toUpperCase(),
-    p_first_name:firstName,p_last_name:lastName,p_dni:dni.replace(/\D/g,''),
-    p_phone:phone,p_free:free,p_accept:accept
+    p_campaign_id:campaign.id,p_code:free?'':token,
+    p_first_name:first,p_last_name:last,p_dni:doc,
+    p_phone:tel,p_free:free,p_accept:accept
    });
    if(error)throw error;
-   setReceipt(String(data||'Tu participación fue registrada.'));
-   setCode('');setAccept(false);
-  }catch(err){setProblem(err instanceof Error?err.message:'No se pudo registrar tu participación.');}
+   const result=String(data||'');
+   if(result.startsWith('DENEGADO:')){setProblem(result.slice(9).trim());return;}
+   if(!result)throw new Error('No recibimos confirmación de la base. Comprobá tu inscripción con el comercio.');
+   setReceipt(result);setCode('');setAccept(false);
+  }catch(err){setProblem(registrationError(err));}
   finally{setSending(false);}
  }
  return <main className="raffle-site">
@@ -116,13 +136,19 @@ export default function SorteosPublic(){
     <div className="raffle-hero-actions"><a href="#participar" className="raffle-cta">Registrar mi participación <span>↗</span></a><a href="#resultados" className="raffle-cta-secondary">Ver resultados</a></div>
     <div className="raffle-hero-info"><span><Icon name="award"/> Un agradecimiento a quienes nos eligen</span><span><Icon name="package"/> Una nueva participación por compra validada</span></div>
    </div>
-   <div className="raffle-hero-art">
-    <span className="raffle-art-top">MITOBICEL · GRACIAS POR CONFIAR</span>
+   <div className="raffle-hero-art raffle-gifts-hero">
+    <img className="raffle-gifts-logo" src="/logo-mitobicel.png" alt="MITOBICEL"/>
+    <span className="raffle-gifts-ribbon">UN AGRADECIMIENTO A TU ESFUERZO</span>
     {campaign?.prize_image_url&&campaign.prizes.length?
-     <div className="raffle-art-prize"><img src={campaign.prize_image_url} alt={"Imagen del premio anunciado: "+campaign.prizes[0]}/><span>PREMIO CONFIRMADO · {campaign.period}</span></div>:
-     <div className="raffle-art-orbit"><div className="raffle-art-award"><Icon name="award"/></div></div>}
-    <span className="raffle-art-title">CRECEMOS CON VOS</span>
-    <span className="raffle-art-foot">Buscas · Papeleras · Distribuidores</span>
+     <div className="raffle-gifts-real"><img src={campaign.prize_image_url} alt={"Premio confirmado: "+campaign.prizes[0]}/><strong>PREMIO CONFIRMADO · {campaign.period}</strong></div>:
+     <div className="raffle-gifts-stage" aria-label="Ilustraciones de posibles premios: movilidad, tecnología y equipamiento">
+      <div className="raffle-gifts-tile raffle-gifts-mobility"><Icon name="truck"/><span>Movilidad</span></div>
+      <div className="raffle-gifts-tile raffle-gifts-tv"><Icon name="film"/><span>Entretenimiento</span></div>
+      <div className="raffle-gifts-center"><Icon name="gift"/><strong>¡GRACIAS!</strong><span>Seguimos creciendo juntos</span></div>
+      <div className="raffle-gifts-tile raffle-gifts-tech"><Icon name="package"/><span>Tecnología</span></div>
+      <div className="raffle-gifts-tile raffle-gifts-home"><Icon name="award"/><span>Para tu hogar</span></div>
+     </div>}
+    <span className="raffle-gifts-foot">BUSCAS · PAPELERAS · DISTRIBUIDORES</span>
    </div>
   </section>
   <section className="raffle-section raffle-prizes" id="premios">
@@ -137,7 +163,7 @@ export default function SorteosPublic(){
    <p className="raffle-how-intro">Una forma más de agradecer a quienes nos eligen. Así funciona:</p>
    <div className="raffle-steps">
     <article><span>01</span><h3>Escaneá el QR general</h3><p>En MITOBICEL 1, Temperley, a una cuadra de la estación, encontrás el mismo QR para todos. Abrí la página de sorteos cuando quieras.</p></article>
-    <article><span>02</span><h3>Validá tu compra</h3><p>El comercio te entrega un código privado después de cada compra participante. Ingresalo junto con tus datos: una compra validada, una participación. Podés volver a participar con otra compra válida.</p></article>
+    <article><span>02</span><h3>Validá tu compra</h3><p>El comercio verifica la compra, registra tu DNI y te entrega cuatro números. Ingresalos con ese mismo DNI: un código por compra válida. Podés volver a participar si comprás nuevamente.</p></article>
     <article><span>03</span><h3>Seguí el sorteo</h3><p>Consultá acá la fecha oficial, los premios confirmados, los ganadores y las entregas.</p></article>
    </div>
    <div className="raffle-authorized-shop"><Icon name="map-pin"/><div><strong>Único comercio autorizado: MITOBICEL 1</strong><p>Temperley, Zona Sur, Buenos Aires · A una cuadra de la estación.</p></div></div>
@@ -160,11 +186,11 @@ export default function SorteosPublic(){
       <label><input type="radio" name="entry" checked={!free} onChange={()=>setFree(false)}/> Con código de compra</label>
       <label><input type="radio" name="entry" checked={free} onChange={()=>setFree(true)}/> Sin obligación de compra</label>
      </div>
-     {!free&&<p className="raffle-free-instructions">El QR de entrada es siempre el mismo. Cada compra verificada recibe un código de un solo uso. Podés registrar varias compras distintas, incluso el mismo día.</p>}
-     {!free?<label className="raffle-field">Código de compra (entregado por MITOBICEL 1)<input value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="off" required placeholder="Ingresá el código único de tu compra"/></label>:<p className="raffle-free-instructions">{campaign?.free_instructions||'Podés participar sin compra según las bases de la edición.'}</p>}
+     {!free&&<p className="raffle-free-instructions">El QR es siempre el mismo. Después de comprar, mostrás tu DNI en MITOBICEL 1 y recibís un código de cuatro números vinculado a ese documento. Cada nueva compra validada permite otra participación.</p>}
+     {!free?<label className="raffle-field">Código de cuatro números de tu compra<input inputMode="numeric" value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="one-time-code" required placeholder="Ejemplo: 0427"/></label>:<p className="raffle-free-instructions">{campaign?.free_instructions||'Podés participar sin compra según las bases de la edición.'}</p>}
      <div className="raffle-fields-two">
-      <label className="raffle-field">Nombre<input value={firstName} onChange={e=>setFirstName(e.target.value.slice(0,80))} required autoComplete="given-name" maxLength={80} placeholder="Tu nombre"/></label>
-      <label className="raffle-field">Apellido<input value={lastName} onChange={e=>setLastName(e.target.value.slice(0,80))} required autoComplete="family-name" maxLength={80} placeholder="Tu apellido"/></label>
+      <label className="raffle-field">Nombre<input value={firstName} onChange={e=>setFirstName(e.target.value.slice(0,80))} required minLength={2} autoComplete="given-name" maxLength={80} placeholder="Tu nombre completo"/></label>
+      <label className="raffle-field">Apellido<input value={lastName} onChange={e=>setLastName(e.target.value.slice(0,80))} required minLength={2} autoComplete="family-name" maxLength={80} placeholder="Tu apellido completo"/></label>
      </div>
      <div className="raffle-fields-two">
       <label className="raffle-field">DNI<input inputMode="numeric" value={dni} onChange={e=>setDni(e.target.value.replace(/\D/g,'').slice(0,9))} minLength={7} maxLength={9} required placeholder="Solo números"/></label>
