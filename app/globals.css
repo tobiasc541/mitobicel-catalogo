@@ -932,3 +932,40 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  .raffle-hero-art-uploaded{max-height:none;max-width:480px}
  .raffle-admin-hero-upload{grid-template-columns:1fr}
 }
+
+/* Personal de Sorteos: acceso mínimo, sin datos de compradores. */
+.raffle-staff-page{min-height:100vh;background:radial-gradient(circle at top right,#e7f6ea,transparent 45%),#f6faf7;color:#092e1b;font-family:inherit;padding:28px 18px 70px}
+.raffle-staff-shell{width:100%;max-width:590px;margin:0 auto}
+.raffle-staff-header{display:flex;align-items:center;gap:16px;margin:0 0 25px}
+.raffle-staff-header img{width:88px;max-height:75px;object-fit:contain}
+.raffle-staff-header span{font-size:11px;font-weight:900;letter-spacing:.15em;color:#167247}
+.raffle-staff-header h1{font-size:clamp(25px,4vw,37px);letter-spacing:-.05em;margin:5px 0}
+.raffle-staff-panel{border:1px solid #cee4d4;border-radius:24px;padding:clamp(22px,5vw,36px);background:white;box-shadow:0 20px 60px #00240d0d}
+.raffle-staff-panel h2{font-size:clamp(23px,4vw,29px);letter-spacing:-.05em;line-height:1.15;margin:0 0 12px}
+.raffle-staff-panel p{font-size:14px;line-height:1.65;color:#416352;margin:0 0 22px}
+.raffle-staff-login{display:flex;flex-direction:column;gap:15px}
+.raffle-staff-login p{margin-bottom:5px}
+.raffle-staff-login label{font-size:12px;font-weight:800;display:flex;flex-direction:column;gap:7px}
+.raffle-staff-login input{border:1px solid #c8decf;background:#f8fcf9;border-radius:12px;min-height:50px;padding:0 15px;font-size:15px;color:#092e1b}
+.raffle-staff-page button{cursor:pointer;transition:background .15s,transform .15s}
+.raffle-staff-page button:disabled{opacity:.55;cursor:not-allowed}
+.raffle-staff-primary{background:#cc080d;color:#fff;border:0;border-radius:14px;padding:15px 20px;min-height:56px;font-size:16px;font-weight:900;width:100%}
+.raffle-staff-primary:hover:enabled{background:#aa0712;transform:translateY(-1px)}
+.raffle-staff-page .raffle-staff-text{border:0;background:transparent;color:#147743;text-decoration:underline;font-weight:800;padding:10px}
+.raffle-staff-status{display:flex;align-items:center;gap:8px;color:#126337;font-weight:800;font-size:11px;letter-spacing:.03em;margin-bottom:23px}
+.raffle-staff-status-dot{width:9px;height:9px;border-radius:100%;background:#11a75a;box-shadow:0 0 0 4px #dcf5e8}
+.raffle-staff-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(68px,13vw,104px);font-weight:900;letter-spacing:.12em;color:#052b18;text-align:center;line-height:1.2;padding:25px 0;margin:10px 0 18px;background:#eff8f2;border:1px dashed #a3d1b5;border-radius:18px;font-variant-numeric:tabular-nums}
+.raffle-staff-big{min-height:66px;font-size:18px}
+.raffle-staff-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.raffle-staff-actions button{flex:1;min-width:125px;border:1px solid #c6dfd0;border-radius:11px;background:white;color:#125b34;padding:13px;font-weight:800;font-size:13px}
+.raffle-staff-actions button:hover{background:#e8f6ed}
+.raffle-staff-recent{border-top:1px solid #e4ece7;margin-top:30px;padding-top:20px}
+.raffle-staff-recent strong{font-size:12px;color:#40614d}
+.raffle-staff-recent>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.raffle-staff-recent span{font:800 17px ui-monospace,SFMono-Regular,monospace;background:#ecf7f0;border-radius:8px;padding:7px 12px;color:#093b20}
+.raffle-staff-bottom{margin-top:28px}
+.raffle-staff-alert,.raffle-staff-notice{margin:16px 0 0;border-radius:12px;padding:14px 18px;font-size:13px;font-weight:700;line-height:1.5}
+.raffle-staff-alert{color:#9a1823;background:#fff0f0;border:1px solid #ffd2d2}
+.raffle-staff-notice{color:#135a2d;background:#e8f6ed;border:1px solid #bfe2cd}
+.raffle-staff-footer{text-align:center;color:#668171;font-size:11px;line-height:1.5;margin-top:22px}
+@media(max-width:480px){.raffle-staff-page{padding:22px 12px}.raffle-staff-header img{width:70px}.raffle-staff-header h1{font-size:26px}.raffle-staff-code{letter-spacing:.06em}}

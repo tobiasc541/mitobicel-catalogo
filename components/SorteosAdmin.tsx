@@ -64,7 +64,8 @@ export default function SorteosAdmin(){
  const [campaigns,setCampaigns]=useState<Campaign[]>([]);
  const [form,setForm]=useState<Editor>(fresh);
  const [codes,setCodes]=useState<Code[]>([]),[entries,setEntries]=useState<Entry[]>([]),[winners,setWinners]=useState<Winner[]>([]);
- const [buyerDni,setBuyerDni]=useState(''),[drawPrize,setDrawPrize]=useState('');
+ const [drawPrize,setDrawPrize]=useState('');
+ const [operatorEmail,setOperatorEmail]=useState(''),[operatorBusy,setOperatorBusy]=useState(false);
  const [printed,setPrinted]=useState<Code[]>([]);
  const [qrImage,setQrImage]=useState('');
  const [sharedTerms,setSharedTerms]=useState('');
@@ -159,25 +160,39 @@ export default function SorteosAdmin(){
   if(saveError){setError(saveError.message);}else{setNotice(activate?'Edición publicada. Las inscripciones están disponibles dentro del período configurado.':'Edición guardada correctamente.');await load(data.id);}
   setBusy(false);
  }
+ async function manageOperator(enable:boolean){
+  if(!db||!operatorEmail.trim()||operatorBusy)return;
+  setOperatorBusy(true);setError('');setNotice('');
+  try{
+   const {data,error:e}=await db.rpc('raffle_code_operator_manage',{
+    p_email:operatorEmail.trim(),p_enable:enable
+   });
+   if(e)throw e;
+   setNotice(String(data||'Permisos actualizados correctamente.'));
+   setOperatorEmail('');
+  }catch(err){
+   const e=err as {code?:string;message?:string};
+   setError(e?.code==='PGRST202'?
+    'Falta la nueva función de personal en Supabase. Aplicá la actualización de códigos sin DNI.':
+    (e?.message||'No se pudieron cambiar los permisos.'));
+  }finally{setOperatorBusy(false);}
+ }
  async function generate(){
   if(!db||!form.id||busy)return;
-  const dni=buyerDni.replace(/\D/g,'');
-  if(!/^\d{7,9}$/.test(dni)){setError('Ingresá el DNI del comprador antes de generar su código.');return;}
   setBusy(true);setError('');setNotice('');
   try{
-   const {data,error:e}=await db.rpc('raffle_issue_purchase_code',{
-    p_campaign_id:form.id,p_buyer_dni:dni
-   });
+   const {data,error:e}=await db.rpc('raffle_issue_purchase_code',{p_campaign_id:form.id});
    if(e)throw e;
    const issued=String(data||'');
    if(!/^\d{4}$/.test(issued))throw new Error('La base de datos no devolvió un código de cuatro cifras.');
-   setPrinted([{id:crypto.randomUUID(),campaign_id:form.id,code:issued,store_name:'MITOBICEL 1',buyer_dni:dni,used_at:null}]);
-   setBuyerDni('');
-   setNotice('Código generado: '+issued+'. Entregalo únicamente a la persona cuyo DNI verificaste.');
+   setPrinted([{id:crypto.randomUUID(),campaign_id:form.id,code:issued,store_name:'MITOBICEL 1',buyer_dni:null,used_at:null}]);
+   setNotice('Código generado: '+issued+'. Entregalo luego de verificar la compra.');
    await loadDetails(form.id);
   }catch(err){
-   const message=err&&typeof err==='object'&&'message' in err?String(err.message):'No se pudo emitir el código.';
-   setError('Error al emitir código: '+message+'. Si no actualizaste Supabase, ejecutá el SQL de códigos de cuatro cifras.');
+   const e=err as {code?:string;message?:string};
+   setError(e?.code==='PGRST202'?
+    'Error de Supabase: falta instalar la función nueva de códigos sin DNI. Ejecutá supabase/sorteos_codigos_sin_dni_y_empleados.sql en el proyecto MITOBICEL.':
+    'Error al emitir código: '+(e?.message||'Error desconocido'));
   }finally{setBusy(false);}
  }
  function exportCodes(){
@@ -333,15 +348,25 @@ export default function SorteosAdmin(){
      <p className="raffle-admin-legal">Antes de publicar, revisá las bases con asesoramiento legal: modalidad sin obligación de compra, premios reales, fechas, probabilidad, alcance, privacidad y obligaciones fiscales. No publicar nombres completos ni DNI de participantes.</p>
     </div>
     <div className="raffle-admin-panel" id="talonarios">
-     <h2>Código rápido de cuatro números por compra</h2>
-     <p>El QR general no cambia. Después de verificar una compra, ingresá el DNI del comprador y generá su código de <strong>4 números</strong>. Solo sirve con ese DNI y se utiliza una vez. Si vuelve a comprar, generás otro.</p>
-     <div className="raffle-admin-qr-actions"><label>DNI del comprador (verificado en el local)<input inputMode="numeric" type="text" minLength={7} maxLength={9} pattern="[0-9]{7,9}" value={buyerDni} onChange={e=>setBuyerDni(e.target.value.replace(/\D/g,'').slice(0,9))} placeholder="7 a 9 números"/></label>
-      <button type="button" className="raffle-cta" disabled={!canManage||busy||buyerDni.length<7} onClick={()=>void generate()}>Generar 4 números</button>
+     <h2>Códigos de cuatro números, sin cargar DNI</h2>
+     <p>Después de verificar la entrega de un código, tocá un solo botón. El código se guarda automáticamente y el participante ingresará sus propios datos en la web pública. Solo sirve una vez.</p>
+     <div className="raffle-admin-qr-actions">
+      <button type="button" className="raffle-cta" disabled={!canManage||busy} onClick={()=>void generate()}>Generar código de 4 números</button>
       <button type="button" disabled={!codes.length} onClick={exportCodes}>Descargar comprobantes CSV</button>
       <button type="button" disabled={!codes.length&&!printed.length} onClick={()=>void printQr()}>Imprimir comprobante</button>
+      <a className="raffle-cta-secondary" href="/sorteos/personal" target="_blank" rel="noopener noreferrer">Abrir panel del empleado ↗</a>
      </div>
-     <p className="raffle-admin-hint">Para evitar inscripciones falsas, verificá la venta y el DNI antes de generar los cuatro números. No se crean miles de códigos sin comprador: cada venta confirmada recibe uno nuevo.</p>
-     {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'} · {c.buyer_dni?'DNI terminado en '+c.buyer_dni.slice(-3):'Código anterior'}</small></div>)}</div>}
+     <p className="raffle-admin-hint">El empleado no necesita entrar a este superadministrador: tiene una pantalla exclusiva, sin acceso a participantes, premios ni configuraciones.</p>
+     {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'}{c.buyer_dni?' · DNI antiguo terminado en '+c.buyer_dni.slice(-3):''}</small></div>)}</div>}
+    </div>
+    <div className="raffle-admin-panel">
+     <h2>Acceso del empleado · Solo generar códigos</h2>
+     <p>El empleado crea y confirma su cuenta en <a href="/sorteos/personal" target="_blank" rel="noopener noreferrer">el panel de personal</a> con su propio correo y contraseña. Escribí ese correo para darle o quitarle permiso. Nunca tendrá acceso al superadministrador.</p>
+     <div className="raffle-admin-qr-actions">
+      <label>Correo del empleado<input type="email" placeholder="empleado@ejemplo.com" value={operatorEmail} onChange={e=>setOperatorEmail(e.target.value)} autoComplete="off"/></label>
+      <button type="button" disabled={!operatorEmail.trim()||operatorBusy} onClick={()=>void manageOperator(true)}>Habilitar empleado</button>
+      <button type="button" disabled={!operatorEmail.trim()||operatorBusy} onClick={()=>void manageOperator(false)}>Revocar acceso</button>
+     </div>
     </div>
     <div className="raffle-admin-panel"><h2>Participantes de esta edición</h2><p>Los DNI completos son información privada y solo se visualizan acá para verificar a la persona al entregar un premio.</p>
      {entries.length?<div className="raffle-admin-list">{entries.slice(0,200).map(e=><div key={e.id}><strong>{e.first_name} {e.last_name}</strong><span>DNI {e.dni} · {e.phone}</span><small>{e.entry_type==='free'?'Vía gratuita':'QR de comercio'} · {new Date(e.created_at).toLocaleDateString('es-AR')}</small></div>)}</div>:<p>Todavía no hay participaciones registradas.</p>}
