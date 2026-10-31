@@ -19,6 +19,7 @@ const examples=[
  {title:'Notebooks y tablets',description:'HP, Lenovo, ASUS, Samsung Galaxy Tab o iPad.',purpose:'Una herramienta para ordenar tus cuentas, tus pedidos y tus oportunidades.',icon:'package'},
  {title:'Electrodomésticos para tu hogar',description:'Heladeras, cocinas, lavarropas y microondas: Patrick, Drean, Whirlpool y otras marcas.',purpose:'Premios que pueden mejorar tu día a día y el de tu familia.',icon:'package'},
  ] as const;
+const prizeSpritePositions=['0%','100%','40%','60%','80%','20%'] as const;
 const date=(iso:string)=>new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
 function embedUrl(raw:string):string|null{
  try{
@@ -64,7 +65,7 @@ export default function SorteosPublic(){
  const [ready,setReady]=useState(false),[problem,setProblem]=useState('');
  const [firstName,setFirstName]=useState(''),[lastName,setLastName]=useState('');
  const [dni,setDni]=useState(''),[phone,setPhone]=useState(''),[code,setCode]=useState('');
- const [free,setFree]=useState(false),[accept,setAccept]=useState(false);
+ const [accept,setAccept]=useState(false);
  const [sending,setSending]=useState(false),[receipt,setReceipt]=useState('');
  const [now,setNow]=useState(Date.now());
  const [selectedExample,setSelectedExample]=useState<number|null>(null);
@@ -108,16 +109,16 @@ export default function SorteosPublic(){
   if(tel.length<8){setProblem('Ingresá tu teléfono con código de área.');return;}
   if(!accept){setProblem('Aceptá las bases y condiciones de la edición.');return;}
   const token=code.trim().toUpperCase();
-  if(!free&&!(/^\d{4}$/.test(token)||/^[A-Z0-9]{20,40}$/.test(token))){
+  if(!(/^\d{4}$/.test(token)||/^[A-Z0-9]{20,40}$/.test(token))){
    setProblem('El código nuevo tiene cuatro números. Usá el que te entregaron en el local.');return;
   }
   const db=getDb();if(!db){setProblem('No se pudo conectar con la inscripción.');return;}
   setSending(true);
   try{
    const {data,error}=await db.rpc('raffle_register',{
-    p_campaign_id:campaign.id,p_code:free?'':token,
+    p_campaign_id:campaign.id,p_code:token,
     p_first_name:first,p_last_name:last,p_dni:doc,
-    p_phone:tel,p_free:free,p_accept:accept
+    p_phone:tel,p_free:false,p_accept:accept
    });
    if(error)throw error;
    const result=String(data||'');
@@ -161,7 +162,7 @@ export default function SorteosPublic(){
   <section className="raffle-section raffle-prizes" id="premios">
    <span className="raffle-eyebrow">PREMIOS PARA SOÑAR EN GRANDE</span><h2>Gracias por estar. <em>Lo mejor está por venir.</em></h2>
    <p className="raffle-section-lead">Tocá cada tarjeta y descubrí cómo un premio podría acompañarte. Estos son ejemplos de posibilidades futuras, no premios anunciados ni confirmados.</p>
-   <div className="raffle-prize-grid">{examples.map((prize,i)=><button type="button" className={"raffle-prize-card"+(selectedExample===i?" is-selected":"")} key={prize.title} aria-expanded={selectedExample===i} onClick={()=>setSelectedExample(selectedExample===i?null:i)}><span className="raffle-prize-index">{String(i+1).padStart(2,'0')}</span><div className="raffle-prize-icon" role="img" aria-label={`Imagen ilustrativa de ${prize.title}`} style={{backgroundImage:"url('/sorteos/premios-sprite.png')",backgroundSize:"600% 100%",backgroundPosition:`${i*20}% center`,backgroundRepeat:"no-repeat"}}/><h3>{prize.title}</h3><p className="raffle-prize-description">{prize.description}</p>{selectedExample===i&&<p className="raffle-prize-purpose" aria-live="polite">{prize.purpose}</p>}<span className="raffle-prize-more">{selectedExample===i?"− Ocultar detalle":"+ Ver cómo podría ayudarte"}</span><small>Ejemplos futuros · No confirmados</small></button>)}</div>
+   <div className="raffle-prize-grid">{examples.map((prize,i)=><button type="button" className={"raffle-prize-card"+(selectedExample===i?" is-selected":"")} key={prize.title} aria-expanded={selectedExample===i} onClick={()=>setSelectedExample(selectedExample===i?null:i)}><span className="raffle-prize-index">{String(i+1).padStart(2,'0')}</span><div className="raffle-prize-icon" role="img" aria-label={`Imagen ilustrativa de ${prize.title}`} style={{backgroundImage:"url('/sorteos/premios-sprite.png')",backgroundSize:"600% 100%",backgroundPosition:prizeSpritePositions[i],backgroundRepeat:"no-repeat"}}/><h3>{prize.title}</h3><p className="raffle-prize-description">{prize.description}</p>{selectedExample===i&&<p className="raffle-prize-purpose" aria-live="polite">{prize.purpose}</p>}<span className="raffle-prize-more">{selectedExample===i?"− Ocultar detalle":"+ Ver cómo podría ayudarte"}</span><small>Ejemplos futuros · No confirmados</small></button>)}</div>
    {campaign?.prizes.length?<div className="raffle-confirmed">{campaign.prize_image_url&&<img className="raffle-confirmed-image" src={campaign.prize_image_url} alt={"Foto del premio confirmado "+campaign.prizes[0]}/>}<strong>Premios confirmados · Edición {campaign.period}</strong><div>{campaign.prizes.map((p,i)=><span key={i}>{p}</span>)}</div></div>:<p className="raffle-inline-note">Los premios de la próxima edición se publicarán cuando sean confirmados oficialmente.</p>}
   </section>
   <div className="raffle-mini-thanks" role="note"><span className="raffle-mini-thanks-heart"><Icon name="heart"/></span><p><strong>Para quienes no paran:</strong> desde una moto 110 hasta un utilitario tipo Partner, un premio podría ayudarte a recorrer más lugares, transportar más mercadería o trabajar con mayor comodidad. <strong>Gracias por crecer con nosotros.</strong></p></div>
@@ -174,7 +175,6 @@ export default function SorteosPublic(){
     <article><span>03</span><h3>Seguí el sorteo</h3><p>Consultá acá la fecha oficial, los premios confirmados, los ganadores y las entregas.</p></article>
    </div>
    <div className="raffle-authorized-shop"><Icon name="map-pin"/><div><strong>Único comercio autorizado: MITOBICEL 1</strong><p>Temperley, Zona Sur, Buenos Aires · A una cuadra de la estación.</p></div></div>
-   <p className="raffle-free-note">Sin obligación de compra. También podés participar por la vía gratuita del formulario, conforme a las bases de cada edición.</p>
   </section>
   <section className="raffle-section raffle-register-section" id="participar">
    <div className="raffle-register-intro">
@@ -189,12 +189,8 @@ export default function SorteosPublic(){
     <h3>{open?'¡Inscripciones abiertas!':'Tu participación, cuando se anuncie la edición.'}</h3>
     {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Próxima edición en preparación</strong><p>Cuando MITOBICEL publique las fechas, las bases y los premios confirmados, vas a poder registrarte acá. Todavía no estamos recibiendo datos personales.</p></div>:
     <form onSubmit={e=>void submit(e)}>
-     <div className="raffle-entry-modes">
-      <label><input type="radio" name="entry" checked={!free} onChange={()=>setFree(false)}/> Con código de compra</label>
-      <label><input type="radio" name="entry" checked={free} onChange={()=>setFree(true)}/> Sin obligación de compra</label>
-     </div>
-     {!free&&<p className="raffle-free-instructions">El QR es siempre el mismo. Después de comprar, mostrás tu DNI en MITOBICEL 1 y recibís un código de cuatro números vinculado a ese documento. Cada nueva compra validada permite otra participación.</p>}
-     {!free?<label className="raffle-field">Código de cuatro números de tu compra<input inputMode="numeric" value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="one-time-code" required placeholder="Ejemplo: 0427"/></label>:<p className="raffle-free-instructions">{campaign?.free_instructions||'Podés participar sin compra según las bases de la edición.'}</p>}
+     <p className="raffle-free-instructions"><strong>Con código de compra.</strong> El QR es siempre el mismo. Después de comprar, mostrás tu DNI en MITOBICEL 1 y recibís un código de cuatro números vinculado a ese documento. Cada nueva compra validada permite otra participación.</p>
+     <label className="raffle-field">Código de cuatro números de tu compra<input inputMode="numeric" value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="one-time-code" required placeholder="Ejemplo: 0427"/></label>
      <div className="raffle-fields-two">
       <label className="raffle-field">Nombre<input value={firstName} onChange={e=>setFirstName(e.target.value.slice(0,80))} required minLength={2} autoComplete="given-name" maxLength={80} placeholder="Tu nombre completo"/></label>
       <label className="raffle-field">Apellido<input value={lastName} onChange={e=>setLastName(e.target.value.slice(0,80))} required minLength={2} autoComplete="family-name" maxLength={80} placeholder="Tu apellido completo"/></label>
@@ -225,6 +221,6 @@ export default function SorteosPublic(){
    </div>}
   </section>
   {campaign?.terms&&<section className="raffle-section raffle-terms" id="bases"><details><summary>Bases y condiciones de la edición {campaign.period}</summary><p>{campaign.terms}</p></details></section>}
-  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Sorteos para buscas, papeleras y distribuidores</strong><p>Comercio autorizado: MITOBICEL 1, Temperley, a una cuadra de la estación. Fábrica: Av. San Martín 249, Burzaco.</p><small>© {new Date().getFullYear()} · Participación sin obligación de compra · Resultados sujetos a las bases de cada edición.</small></div></footer>
+  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Sorteos para buscas, papeleras y distribuidores</strong><p>Comercio autorizado: MITOBICEL 1, Temperley, a una cuadra de la estación. Fábrica: Av. San Martín 249, Burzaco.</p><small>© {new Date().getFullYear()} · Resultados sujetos a las bases de cada edición.</small></div></footer>
  </main>;
 }
