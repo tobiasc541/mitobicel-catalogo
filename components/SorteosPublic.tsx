@@ -11,6 +11,15 @@ type Campaign={
 };
 type Winner={prize:string;winner_label:string;dni_mask:string;drawn_at:string;delivered:boolean;delivery_video_url:string;delivery_photo_url:string};
 type Delivery={period:string;prize:string;delivered_at:string;video_url:string;photo_url:string};
+const examples=[
+ {title:'Televisores y entretenimiento',description:'Smart TV Samsung, LG, Philips o TCL de 43”, 50” y 55”.',purpose:'Equipá tu local, tu casa o tu espacio de trabajo.',icon:'film'},
+ {title:'Motos 110 y movilidad',description:'Motocicletas 110 cc, como Honda Wave o Corven Energy.',purpose:'Una ayuda para hacer entregas y visitar clientes con agilidad.',icon:'truck'},
+ {title:'Utilitarios para crecer',description:'Peugeot Partner, Renault Kangoo o Fiat Fiorino.',purpose:'Imaginá llegar a más papeleras y comercios con tus propios repartos.',icon:'truck'},
+ {title:'Celulares y conectividad',description:'iPhone, Samsung Galaxy o Motorola Moto.',purpose:'Respondé pedidos, grabá productos y conectate con más compradores.',icon:'award'},
+ {title:'Notebooks y tablets',description:'HP, Lenovo, ASUS, Samsung Galaxy Tab o iPad.',purpose:'Organizá stock, precios y ventas desde donde estés.',icon:'package'},
+ {title:'Electrodomésticos para tu hogar',description:'Heladeras, cocinas, lavarropas y microondas: Patrick, Drean, Whirlpool y otras marcas.',purpose:'Premios que pueden mejorar tu día a día y el de tu familia.',icon:'package'},
+ {title:'Audio y tecnología',description:'Parlantes JBL, Sony, auriculares Bluetooth y equipos de audio.',purpose:'Disfrutá o sumá equipamiento útil para tu actividad.',icon:'award'}
+] as const;
 const date=(iso:string)=>new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
 function embedUrl(raw:string):string|null{
  try{
@@ -95,49 +104,60 @@ export default function SorteosPublic(){
   finally{setSending(false);}
  }
  return <main className="raffle-site">
-  <div className="raffle-topline"><span>MITOBICEL · INDUSTRIA ARGENTINA</span><span>SORTEOS MENSUALES</span></div>
-  <header className="raffle-header"><a href="/sorteos" aria-label="MITOBICEL Sorteos"><img src="/logo-mitobicel.png" alt="Logo MITOBICEL"/></a><span><span className="raffle-live-dot"/> Página oficial de sorteos</span></header>
+  <div className="raffle-topline"><span>MITOBICEL · INDUSTRIA ARGENTINA</span><span>PARA BUSCAS, PAPELERAS Y DISTRIBUIDORES</span></div>
+  <header className="raffle-header"><a href="/sorteos" aria-label="MITOBICEL Sorteos"><img src="/logo-mitobicel.png" alt="Logo MITOBICEL"/></a><span><span className="raffle-live-dot"/> Sorteos para buscas y mayoristas</span></header>
   <section className="raffle-hero">
    <div className="raffle-hero-copy">
-    <span className="raffle-eyebrow">UNA EXPERIENCIA DIFERENTE PARA NUESTROS CLIENTES</span>
-    <h1>Tu compra puede venir con <em>una gran sorpresa.</em></h1>
-    <p>Participá de las ediciones mensuales de sorteos MITOBICEL. Escaneá el QR que te entrega el comercio autorizado, registrá tus datos y seguí los anuncios de esta página.</p>
+    <span className="raffle-eyebrow">VOLVIMOS. Y VOLVIMOS CON TODO.</span>
+    <h1>Vos hacés crecer tu negocio. <em>Nosotros queremos celebrarlo.</em></h1>
+    <p>Esta página es exclusivamente para buscas —los revendedores que se ganan el día recorriendo comercios—, papeleras y distribuidores. Gracias a ustedes, MITOBICEL sigue creciendo. Por eso queremos devolverles ese apoyo con nuevas oportunidades y sorteos mensuales.</p>
+    <p>No se trata solamente de comprar un bulto, revenderlo y obtener tu ganancia: queremos que también tengas la posibilidad de participar por premios que pueden impulsar tu trabajo y tu vida.</p>
     <div className="raffle-hero-actions"><a href="#participar" className="raffle-cta">Registrar mi participación <span>↗</span></a><a href="#resultados" className="raffle-cta-secondary">Ver resultados</a></div>
-    <div className="raffle-hero-info"><span><Icon name="award"/> Premios confirmados en cada edición</span><span><Icon name="package"/> Una oportunidad por código válido</span></div>
+    <div className="raffle-hero-info"><span><Icon name="award"/> Un agradecimiento a quienes nos eligen</span><span><Icon name="package"/> Un código único por bulto participante</span></div>
    </div>
    <div className="raffle-hero-art">
-    <span className="raffle-art-top">EDICIÓN MENSUAL · MITOBICEL</span>
+    <span className="raffle-art-top">MITOBICEL · GRACIAS POR CONFIAR</span>
     <div className="raffle-art-orbit"><div className="raffle-art-award"><Icon name="award"/></div></div>
-    <span className="raffle-art-title">LO MEJOR PODRÍA SER TUYO</span>
-    <span className="raffle-art-foot">Premios · Emoción · Comunidad</span>
+    <span className="raffle-art-title">CRECEMOS CON VOS</span>
+    <span className="raffle-art-foot">Buscas · Papeleras · Distribuidores</span>
    </div>
   </section>
   <section className="raffle-section raffle-prizes" id="premios">
-   <span className="raffle-eyebrow">LO QUE SE VIENE</span><h2>Grandes premios. <em>Grandes momentos.</em></h2>
-   <p className="raffle-section-lead">Cada mes anunciamos los premios confirmados y las fechas oficiales. Algunos ejemplos de categorías que pueden formar parte de próximas ediciones:</p>
-   <div className="raffle-prize-grid">{['Televisores y entretenimiento','Motocicletas y movilidad','Celulares y tecnología','Notebooks y tablets','Electrodomésticos','Audio y accesorios'].map((prize,i)=><div className="raffle-prize-card" key={prize}><span className="raffle-prize-index">0{i+1}</span><div className="raffle-prize-icon"><Icon name={i===0||i===2||i===3?'film':i===1?'truck':i===4?'package':'award'}/></div><h3>{prize}</h3><small>Ejemplos · Sujetos a confirmación</small></div>)}</div>
+   <span className="raffle-eyebrow">MÁS QUE PREMIOS: NUEVAS POSIBILIDADES</span><h2>Soñá en grande. <em>Seguí creciendo.</em></h2>
+   <p className="raffle-section-lead">Nos encantaría agradecerte con premios que hagan una diferencia. Estas son ideas de lo que podría llegar en futuras ediciones, no premios confirmados ni disponibles actualmente.</p>
+   <div className="raffle-prize-grid">{examples.map((prize,i)=><div className="raffle-prize-card" key={prize.title}><span className="raffle-prize-index">{String(i+1).padStart(2,'0')}</span><div className="raffle-prize-icon"><Icon name={prize.icon}/></div><h3>{prize.title}</h3><p className="raffle-prize-description">{prize.description}</p><p className="raffle-prize-purpose">{prize.purpose}</p><small>Ejemplo para futuras ediciones · No confirmado</small></div>)}</div>
    {campaign?.prizes.length?<div className="raffle-confirmed"><strong>Premios confirmados · Edición {campaign.period}</strong><div>{campaign.prizes.map((p,i)=><span key={i}>{p}</span>)}</div></div>:<p className="raffle-inline-note">Los premios de la próxima edición se publicarán cuando sean confirmados oficialmente.</p>}
   </section>
+  <section className="raffle-growth-story" aria-label="Nuestro agradecimiento a los revendedores">
+   <div className="raffle-growth-inner">
+    <span className="raffle-eyebrow">ESTO ES PARA LOS QUE SALEN A BUSCAR OPORTUNIDADES</span>
+    <h2>Con un bulto hacés una venta. <em>Con una oportunidad, podrías llegar mucho más lejos.</em></h2>
+    <p>Sabemos el esfuerzo que hay detrás de cada reventa: salir temprano, recorrer negocios, ofrecer mercadería y ganarse la confianza de nuevos clientes. Una moto 110 podría ayudarte a hacer entregas más rápido; un utilitario como una Partner o Kangoo, a llegar con más mercadería a más comercios; y una notebook, a ordenar tu stock y tus ventas.</p>
+    <p><strong>Gracias por acompañarnos.</strong> Seguimos fabricando para que ustedes sigan creciendo. Los sorteos son nuestra manera de decirlo con hechos.</p>
+   </div>
+  </section>
   <section className="raffle-section raffle-how" id="como-participar">
-   <span className="raffle-eyebrow">SIMPLE, CLARO Y TRANSPARENTE</span><h2>Tu próxima oportunidad empieza <em>con un QR.</em></h2>
+   <span className="raffle-eyebrow">UN AGRADECIMIENTO POR SEGUIR CRECIENDO JUNTOS</span><h2>Esto es para ustedes. <em>Gracias por ser parte.</em></h2>
+   <p className="raffle-how-intro">Queremos devolver un poquito de todo lo que nos dan. Participar es muy sencillo:</p>
    <div className="raffle-steps">
-    <article><span>01</span><h3>Recibí tu código</h3><p>Por cada bulto participante, el comercio autorizado Temper te entrega un código QR único, válido para una inscripción.</p></article>
+    <article><span>01</span><h3>Recibí tu código</h3><p>En el punto autorizado de Temperley, a una cuadra de la estación, te entregan un código QR único por cada bulto participante. Cada código suma una oportunidad.</p></article>
     <article><span>02</span><h3>Completá tus datos</h3><p>Escanealo, cargá nombre, apellido y DNI. El documento se verifica con el original si resultás ganador.</p></article>
     <article><span>03</span><h3>Seguí el sorteo</h3><p>Consultá acá la fecha oficial, los premios confirmados, los ganadores y las entregas.</p></article>
    </div>
-   <p className="raffle-free-note">Sin obligación de compra. También existe una vía de participación gratuita, disponible en el formulario, según las bases de cada edición.</p>
+   <div className="raffle-authorized-shop"><Icon name="map-pin"/><div><strong>Único comercio autorizado de MITOBICEL para esta acción</strong><p>Temper · Temperley, Zona Sur, Buenos Aires · A una cuadra de la estación de Temperley.</p></div></div>
+   <p className="raffle-free-note">Sin obligación de compra. También podés participar por la vía gratuita del formulario, conforme a las bases de cada edición.</p>
   </section>
   <section className="raffle-section raffle-register-section" id="participar">
    <div className="raffle-register-intro">
-    <span className="raffle-eyebrow">TU LUGAR EN LA PRÓXIMA EDICIÓN</span>
+    <span className="raffle-eyebrow">SORTEOS PARA BUSCAS, PAPELERAS Y DISTRIBUIDORES</span>
     <h2>Registrá tu <em>participación.</em></h2>
-    <p>Los datos se utilizan para administrar el sorteo y verificar la identidad del ganador. Tu DNI completo nunca se publica.</p>
+    <p>Tu esfuerzo merece reconocimiento. Completá tus datos para participar en la edición vigente; si resultás ganador, tu nombre y DNI se comprobarán con tu documento. Nunca publicamos el DNI completo.</p>
     <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · '+campaign.store_name:'Consultá esta página para próximos anuncios'}</small></div>
    </div>
    <div className="raffle-register-card">
     <span className="raffle-eyebrow">FORMULARIO OFICIAL</span>
-    <h3>Una participación, una ilusión.</h3>
-    {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Inscripciones todavía no habilitadas</strong><p>Publicaremos las fechas, los premios y las bases en esta página. Volvé a visitarnos.</p></div>:
+    <h3>{open?'¡Inscripciones abiertas!':'Tu participación, cuando se anuncie la edición.'}</h3>
+    {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Próxima edición en preparación</strong><p>Cuando MITOBICEL publique las fechas, las bases y los premios confirmados, vas a poder registrarte acá. Todavía no estamos recibiendo datos personales.</p></div>:
     <form onSubmit={e=>void submit(e)}>
      <div className="raffle-entry-modes">
       <label><input type="radio" name="entry" checked={!free} onChange={()=>setFree(false)}/> Con código del comercio</label>
@@ -167,13 +187,13 @@ export default function SorteosPublic(){
    {winners.length?<div className="raffle-winners">{winners.map((w,i)=><div className="raffle-winner" key={i}><Icon name="award"/><div><strong>{w.prize}</strong><p>{w.winner_label} · DNI {w.dni_mask}</p><small>Fecha del sorteo: {date(w.drawn_at)} · {w.delivered?'Premio entregado':'Pendiente de entrega'}</small></div></div>)}</div>:<div className="raffle-result-empty"><Icon name="award"/><div><strong>Próximamente, nuevos ganadores</strong><p>Los resultados se mostrarán acá una vez realizado y publicado el sorteo.</p></div></div>}
   </section>
   <section className="raffle-section raffle-video-section" id="entregas">
-   <div><span className="raffle-eyebrow">TRANSPARENCIA EN CADA ENTREGA</span><h2>Historias reales. <em>Premios entregados.</em></h2><p>Seguí los videos de las entregas oficiales y conocé a quienes recibieron sus premios.</p></div>
+   <div><span className="raffle-eyebrow">PORQUE AGRADECER TAMBIÉN ES CUMPLIR</span><h2>Cada premio entregado, <em>una historia para compartir.</em></h2><p>Acá vamos a mostrar las entregas reales cuando se realicen, para que toda la comunidad de buscas, papeleras y distribuidores pueda seguir los resultados.</p></div>
    <Video url={campaign?.video_url||''} title={campaign?.video_title||'Entregas MITOBICEL'}/>
    {deliveries.length>0&&<div className="raffle-delivery-links">
     {deliveries.map((d,i)=><a key={i} href={d.video_url||d.photo_url} rel="noopener noreferrer" target="_blank">{d.prize} · {d.period} · Ver entrega ↗</a>)}
    </div>}
   </section>
   {campaign?.terms&&<section className="raffle-section raffle-terms" id="bases"><details><summary>Bases y condiciones de la edición {campaign.period}</summary><p>{campaign.terms}</p></details></section>}
-  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Sorteos oficiales</strong><p>Fábrica en Av. San Martín 249, Burzaco · Buenos Aires.</p><small>© {new Date().getFullYear()} · Participación sin obligación de compra · Resultados sujetos a las bases de cada edición.</small></div></footer>
+  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Sorteos para buscas, papeleras y distribuidores</strong><p>Comercio autorizado: Temper, Temperley, a una cuadra de la estación. Fábrica: Av. San Martín 249, Burzaco.</p><small>© {new Date().getFullYear()} · Participación sin obligación de compra · Resultados sujetos a las bases de cada edición.</small></div></footer>
  </main>;
 }

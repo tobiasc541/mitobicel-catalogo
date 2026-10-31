@@ -99,7 +99,7 @@ export default function SorteosAdmin(){
   if(!(dates[0]<dates[1]&&dates[1]<=dates[2])){setError('El cierre debe ser posterior al inicio y el sorteo debe ser posterior al cierre.');return;}
   const prizes=form.prizes.split('\n').map(p=>p.trim()).filter(Boolean);
   if(form.status!=='draft'&&(!prizes.length||form.terms.trim().length<80)){
-   setError('Para publicar, cargá premios confirmados y bases y condiciones de al menos 80 caracteres.');return;
+   setError('Para habilitar inscripciones, cargá premios realmente confirmados y las bases legales completas (mínimo 80 caracteres).');return;
   }
   if(form.results_published&&form.status==='draft'){setError('No se publican resultados de una edición en borrador.');return;}
   setBusy(true);
@@ -171,7 +171,7 @@ export default function SorteosAdmin(){
  return <div className="raffle-admin">
   <header className="raffle-admin-header"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><span className="raffle-eyebrow">SOLO PERSONAL AUTORIZADO</span><strong>Centro de Control · Sorteos</strong></div><a href="/sorteos" target="_blank" rel="noopener noreferrer">Ver página pública ↗</a></header>
   <section className="raffle-admin-main">
-   <div className="raffle-admin-banner"><span className="raffle-eyebrow">GESTIÓN DE SORTEOS</span><h1>Una experiencia que deja huella.</h1><p>Creá ediciones mensuales, administrá participaciones y publicá premios y resultados, sin modificar ninguno de los catálogos.</p></div>
+   <div className="raffle-admin-banner"><span className="raffle-eyebrow">GESTIÓN DE SORTEOS</span><h1>Volvimos. Y volvimos con todo.</h1><p>Administrá los sorteos de agradecimiento para buscas, papeleras y distribuidores. Comercio autorizado: Temper, Temperley, a una cuadra de la estación. Los catálogos siguen independientes.</p></div>
    {checking?<p>Verificando permisos…</p>:!authorized?<form className="raffle-admin-panel raffle-login" onSubmit={e=>void login(e)}>
     <h2>Ingresá al superadmin</h2><p>Acceso exclusivo con las credenciales del administrador de MITOBICEL.</p>
     <label>Correo electrónico<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username"/></label>
@@ -188,13 +188,13 @@ export default function SorteosAdmin(){
      <div className="raffle-admin-editions">{campaigns.map(c=><button key={c.id} className={form.id===c.id?'active':''} type="button" onClick={()=>{setForm(asEditor(c));void loadDetails(c.id);}}>{c.period} · {c.status}</button>)}</div>
      <form className="raffle-admin-form" onSubmit={e=>void save(e)}>
       <label>Mes de la edición<input type="month" required value={form.period} onChange={e=>update('period',e.target.value)}/></label>
-      <label>Comercio autorizado<input value={form.store_name} onChange={e=>update('store_name',e.target.value)} required/></label>
+      <label>Comercio autorizado (Temper · Temperley)<input value={form.store_name} onChange={e=>update('store_name',e.target.value)} required/></label>
       <label className="wide">Título<input value={form.title} onChange={e=>update('title',e.target.value)} required/></label>
       <label className="wide">Subtítulo<input value={form.subtitle} onChange={e=>update('subtitle',e.target.value)}/></label>
       <label>Inicio de inscripción<input type="datetime-local" value={form.starts_at} required onChange={e=>update('starts_at',e.target.value)}/></label>
       <label>Cierre de inscripción<input type="datetime-local" value={form.ends_at} required onChange={e=>update('ends_at',e.target.value)}/></label>
       <label>Fecha y hora del sorteo<input type="datetime-local" value={form.draw_at} required onChange={e=>update('draw_at',e.target.value)}/></label>
-      <label>Estado<select value={form.status} onChange={e=>update('status',e.target.value as Editor['status'])}><option value="draft">Borrador (no público)</option><option value="live">Publicado / inscripciones</option><option value="closed">Cerrado / resultados</option></select></label>
+      <label>Estado<select value={form.status} onChange={e=>update('status',e.target.value as Editor['status'])}><option value="draft">Borrador (no público)</option><option value="live">Inscripciones habilitadas (con fechas y bases)</option><option value="closed">Cerrado / resultados</option></select></label>
       <label className="wide">Premios CONFIRMADOS (uno por renglón)<textarea rows={4} value={form.prizes} placeholder="Ej.: Smart TV 50 pulgadas · 1 unidad" onChange={e=>update('prizes',e.target.value)}/></label>
       <label className="wide">Bases y condiciones de la edición<textarea rows={7} value={form.terms} placeholder="Organizador, vigencia, alcance geográfico, requisitos, premios, probabilidades, vía gratuita, procedimiento de selección, costos, validación de DNI, datos personales…" onChange={e=>update('terms',e.target.value)}/></label>
       <label className="wide">Procedimiento gratuito<textarea rows={2} value={form.free_instructions} onChange={e=>update('free_instructions',e.target.value)}/></label>

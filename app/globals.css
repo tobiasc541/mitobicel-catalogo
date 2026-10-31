@@ -768,3 +768,23 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 }
 @media(max-width:380px){.raffle-entry-modes{grid-template-columns:1fr}.raffle-fields-two{grid-template-columns:1fr}.raffle-hero-actions{display:grid}.raffle-cta,.raffle-cta-secondary{width:100%}}
 @media(prefers-reduced-motion:reduce){.raffle-cta,.raffle-prize-card{transition:none!important}}
+
+
+/* Sorteos: contenido específico para buscas y objetivos de crecimiento */
+.raffle-prize-card{min-height:255px;display:flex;flex-direction:column;align-items:flex-start}
+.raffle-prize-card h3{margin:17px 0 9px}
+.raffle-prize-description{font-size:12px;line-height:1.65;color:#253e30;margin:0 0 7px;font-weight:700}
+.raffle-prize-purpose{font-size:11px;line-height:1.6;color:#607a68;margin:0 0 14px}
+.raffle-prize-card small{margin-top:auto}
+.raffle-growth-story{background:linear-gradient(130deg,#e5f6eb,#f7fbf8 55%,#e2f1e9);padding:79px 22px}
+.raffle-growth-inner{max-width:930px;margin:auto;text-align:center}
+.raffle-growth-inner h2{font-size:clamp(31px,4.1vw,52px);line-height:1.17;margin:0 0 20px;letter-spacing:-.05em}
+.raffle-growth-inner h2 em{font-style:normal;color:#d7081b}
+.raffle-growth-inner p{max-width:780px;margin:0 auto 15px;font-size:14px;line-height:2;color:#415e4a}
+.raffle-how-intro{color:#b9eac9;font-size:14px;line-height:1.8;margin:5px auto 0}
+.raffle-authorized-shop{display:flex;text-align:left;align-items:center;max-width:710px;margin:24px auto 14px;padding:16px 20px;border:1px solid #a2efbc55;border-radius:14px;background:#ffffff10;gap:14px}
+.raffle-authorized-shop svg{width:24px;height:24px;flex:none;color:#61e898}
+.raffle-authorized-shop strong{display:block;font-size:12px;color:white;margin-bottom:4px}
+.raffle-authorized-shop p{font-size:12px;line-height:1.5;color:#cde7d5;margin:0}
+@media(max-width:700px){.raffle-growth-story{padding:56px 17px}.raffle-growth-inner p{font-size:12px}.raffle-prize-card{min-height:256px}.raffle-prize-description{font-size:11px}.raffle-prize-purpose{font-size:10px}}
+@media(max-width:380px){.raffle-prize-grid{grid-template-columns:1fr}.raffle-prize-card{min-height:185px}}
