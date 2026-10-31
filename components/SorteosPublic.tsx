@@ -7,7 +7,7 @@ type Campaign={
  id:string;period:string;title:string;subtitle:string;store_name:string;
  prizes:string[];starts_at:string;ends_at:string;draw_at:string;status:string;
  results_published:boolean;terms:string;video_url:string;video_title:string;
- free_instructions:string;
+ free_instructions:string;prize_image_url?:string;
 };
 type Winner={prize:string;winner_label:string;dni_mask:string;drawn_at:string;delivered:boolean;delivery_video_url:string;delivery_photo_url:string};
 type Delivery={period:string;prize:string;delivered_at:string;video_url:string;photo_url:string};
@@ -61,6 +61,7 @@ export default function SorteosPublic(){
  const [selectedExample,setSelectedExample]=useState<number|null>(null);
  useEffect(()=>{
   const codeFromUrl=new URLSearchParams(window.location.search).get('codigo');
+  // Accept already printed legacy URLs, but the new QR is always /sorteos.
   if(codeFromUrl)setCode(codeFromUrl.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40));
   let live=true;
   const load=async()=>{
@@ -88,7 +89,7 @@ export default function SorteosPublic(){
  async function submit(e:React.FormEvent){
   e.preventDefault();setReceipt('');setProblem('');
   if(!campaign||!open)return;
-  if(!free&&!/^[A-Z0-9]{20,40}$/.test(code.trim().toUpperCase())){setProblem('Ingresá el código único que te entregó el comercio.');return;}
+  if(!free&&!/^[A-Z0-9]{20,40}$/.test(code.trim().toUpperCase())){setProblem('Ingresá el código de compra válido que te entregaron en MITOBICEL 1.');return;}
   const db=getDb();if(!db){setProblem('No se pudo conectar con la inscripción.');return;}
   setSending(true);
   try{
@@ -113,11 +114,13 @@ export default function SorteosPublic(){
     <p>Para quienes salen a vender en el tren y en la calle, y para las papeleras y distribuidoras que nos eligen cada día: <strong>gracias por ser parte de MITOBICEL.</strong></p>
     <p>Con cada venta te llevás el fruto de tu trabajo. Y ahora queremos agradecerte con la oportunidad de participar por premios que pueden hacer tu día a día más fácil, abrirte nuevas puertas o alegrar a tu familia.</p>
     <div className="raffle-hero-actions"><a href="#participar" className="raffle-cta">Registrar mi participación <span>↗</span></a><a href="#resultados" className="raffle-cta-secondary">Ver resultados</a></div>
-    <div className="raffle-hero-info"><span><Icon name="award"/> Un agradecimiento a quienes nos eligen</span><span><Icon name="package"/> Un código único por bulto participante</span></div>
+    <div className="raffle-hero-info"><span><Icon name="award"/> Un agradecimiento a quienes nos eligen</span><span><Icon name="package"/> Una nueva participación por compra validada</span></div>
    </div>
    <div className="raffle-hero-art">
     <span className="raffle-art-top">MITOBICEL · GRACIAS POR CONFIAR</span>
-    <div className="raffle-art-orbit"><div className="raffle-art-award"><Icon name="award"/></div></div>
+    {campaign?.prize_image_url&&campaign.prizes.length?
+     <div className="raffle-art-prize"><img src={campaign.prize_image_url} alt={"Imagen del premio anunciado: "+campaign.prizes[0]}/><span>PREMIO CONFIRMADO · {campaign.period}</span></div>:
+     <div className="raffle-art-orbit"><div className="raffle-art-award"><Icon name="award"/></div></div>}
     <span className="raffle-art-title">CRECEMOS CON VOS</span>
     <span className="raffle-art-foot">Buscas · Papeleras · Distribuidores</span>
    </div>
@@ -126,15 +129,15 @@ export default function SorteosPublic(){
    <span className="raffle-eyebrow">PREMIOS PARA SOÑAR EN GRANDE</span><h2>Gracias por estar. <em>Lo mejor está por venir.</em></h2>
    <p className="raffle-section-lead">Tocá cada tarjeta y descubrí cómo un premio podría acompañarte. Estos son ejemplos de posibilidades futuras, no premios anunciados ni confirmados.</p>
    <div className="raffle-prize-grid">{examples.map((prize,i)=><button type="button" className={"raffle-prize-card"+(selectedExample===i?" is-selected":"")} key={prize.title} aria-expanded={selectedExample===i} onClick={()=>setSelectedExample(selectedExample===i?null:i)}><span className="raffle-prize-index">{String(i+1).padStart(2,'0')}</span><div className="raffle-prize-icon"><Icon name={prize.icon}/></div><h3>{prize.title}</h3><p className="raffle-prize-description">{prize.description}</p>{selectedExample===i&&<p className="raffle-prize-purpose" aria-live="polite">{prize.purpose}</p>}<span className="raffle-prize-more">{selectedExample===i?"− Ocultar detalle":"+ Ver cómo podría ayudarte"}</span><small>Ejemplos futuros · No confirmados</small></button>)}</div>
-   {campaign?.prizes.length?<div className="raffle-confirmed"><strong>Premios confirmados · Edición {campaign.period}</strong><div>{campaign.prizes.map((p,i)=><span key={i}>{p}</span>)}</div></div>:<p className="raffle-inline-note">Los premios de la próxima edición se publicarán cuando sean confirmados oficialmente.</p>}
+   {campaign?.prizes.length?<div className="raffle-confirmed">{campaign.prize_image_url&&<img className="raffle-confirmed-image" src={campaign.prize_image_url} alt={"Foto del premio confirmado "+campaign.prizes[0]}/>}<strong>Premios confirmados · Edición {campaign.period}</strong><div>{campaign.prizes.map((p,i)=><span key={i}>{p}</span>)}</div></div>:<p className="raffle-inline-note">Los premios de la próxima edición se publicarán cuando sean confirmados oficialmente.</p>}
   </section>
   <div className="raffle-mini-thanks" role="note"><span className="raffle-mini-thanks-heart"><Icon name="heart"/></span><p><strong>Para quienes no paran:</strong> desde una moto 110 hasta un utilitario tipo Partner, un premio podría ayudarte a recorrer más lugares, transportar más mercadería o trabajar con mayor comodidad. <strong>Gracias por crecer con nosotros.</strong></p></div>
   <section className="raffle-section raffle-how" id="como-participar">
    <span className="raffle-eyebrow">UN GESTO DE AGRADECIMIENTO</span><h2>Nos acompañaste. <em>Ahora queremos agradecerte.</em></h2>
    <p className="raffle-how-intro">Una forma más de agradecer a quienes nos eligen. Así funciona:</p>
    <div className="raffle-steps">
-    <article><span>01</span><h3>Recibí tu código</h3><p>En MITOBICEL 1, Temperley, a una cuadra de la estación, recibís un código único por cada bulto participante. Cada código suma una oportunidad.</p></article>
-    <article><span>02</span><h3>Completá tus datos</h3><p>Escanealo, cargá nombre, apellido y DNI. El documento se verifica con el original si resultás ganador.</p></article>
+    <article><span>01</span><h3>Escaneá el QR general</h3><p>En MITOBICEL 1, Temperley, a una cuadra de la estación, encontrás el mismo QR para todos. Abrí la página de sorteos cuando quieras.</p></article>
+    <article><span>02</span><h3>Validá tu compra</h3><p>El comercio te entrega un código privado después de cada compra participante. Ingresalo junto con tus datos: una compra validada, una participación. Podés volver a participar con otra compra válida.</p></article>
     <article><span>03</span><h3>Seguí el sorteo</h3><p>Consultá acá la fecha oficial, los premios confirmados, los ganadores y las entregas.</p></article>
    </div>
    <div className="raffle-authorized-shop"><Icon name="map-pin"/><div><strong>Único comercio autorizado: MITOBICEL 1</strong><p>Temperley, Zona Sur, Buenos Aires · A una cuadra de la estación.</p></div></div>
@@ -154,10 +157,11 @@ export default function SorteosPublic(){
     {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Próxima edición en preparación</strong><p>Cuando MITOBICEL publique las fechas, las bases y los premios confirmados, vas a poder registrarte acá. Todavía no estamos recibiendo datos personales.</p></div>:
     <form onSubmit={e=>void submit(e)}>
      <div className="raffle-entry-modes">
-      <label><input type="radio" name="entry" checked={!free} onChange={()=>setFree(false)}/> Con código del comercio</label>
+      <label><input type="radio" name="entry" checked={!free} onChange={()=>setFree(false)}/> Con código de compra</label>
       <label><input type="radio" name="entry" checked={free} onChange={()=>setFree(true)}/> Sin obligación de compra</label>
      </div>
-     {!free?<label className="raffle-field">Código único del bulto<input value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="off" required placeholder="Ingresá tu código de participación"/></label>:<p className="raffle-free-instructions">{campaign?.free_instructions||'Una participación gratuita por persona y mes.'}</p>}
+     {!free&&<p className="raffle-free-instructions">El QR de entrada es siempre el mismo. Cada compra verificada recibe un código de un solo uso. Podés registrar varias compras distintas, incluso el mismo día.</p>}
+     {!free?<label className="raffle-field">Código de compra (entregado por MITOBICEL 1)<input value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="off" required placeholder="Ingresá el código único de tu compra"/></label>:<p className="raffle-free-instructions">{campaign?.free_instructions||'Podés participar sin compra según las bases de la edición.'}</p>}
      <div className="raffle-fields-two">
       <label className="raffle-field">Nombre<input value={firstName} onChange={e=>setFirstName(e.target.value.slice(0,80))} required autoComplete="given-name" maxLength={80} placeholder="Tu nombre"/></label>
       <label className="raffle-field">Apellido<input value={lastName} onChange={e=>setLastName(e.target.value.slice(0,80))} required autoComplete="family-name" maxLength={80} placeholder="Tu apellido"/></label>

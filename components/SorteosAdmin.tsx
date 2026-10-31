@@ -7,27 +7,49 @@ import {Icon} from '@/components/Visuals';
 type Campaign={
  id:string;period:string;title:string;subtitle:string;store_name:string;prizes:string[];
  starts_at:string;ends_at:string;draw_at:string;status:'draft'|'live'|'closed';
- results_published:boolean;terms:string;video_url:string;video_title:string;free_instructions:string
+ results_published:boolean;terms:string;video_url:string;video_title:string;free_instructions:string;prize_image_url:string
 };
 type Code={id:string;code:string;store_name:string;used_at:string|null;campaign_id:string};
 type Entry={id:string;first_name:string;last_name:string;dni:string;phone:string;entry_type:string;created_at:string;campaign_id:string};
 type Winner={id:string;prize:string;entry_id:string;delivered_at:string|null;delivery_video_url:string;delivery_photo_url:string;drawn_at:string};
-const local=(s:string)=>s?new Date(s).toLocaleString('sv-SE',{hour12:false}).replace(' ','T').slice(0,16):'';
-const iso=(s:string)=>new Date(s).toISOString();
+/** Datetime-local is a local wall-clock value (Argentina), not an ISO UTC string.
+ * Accept both the input control format and a localized DD/MM/YYYY representation.
+ * Return a specific validation error rather than letting toISOString throw.
+ */
+const local=(input:string)=>{
+ if(!input)return '';
+ const d=new Date(input);
+ if(!Number.isFinite(d.getTime()))return '';
+ const pad=(n:number)=>String(n).padStart(2,'0');
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+function iso(input:string,label:string):string{
+ const s=(input||'').trim();
+ const match=s.match(/^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)(?::\d\d)?$/)
+  || s.match(/^(\d\d)\/(\d\d)\/(\d{4})[, ]+(\d\d):(\d\d)$/);
+ if(!match)throw new Error('Revisá el formato de '+label+'. Elegí día y hora desde el calendario.');
+ const european=s.includes('/');
+ const y=Number(european?match[3]:match[1]),m=Number(match[2]),day=Number(european?match[1]:match[3]);
+ const hour=Number(match[4]),minute=Number(match[5]);
+ const d=new Date(y,m-1,day,hour,minute,0);
+ if(!Number.isFinite(d.getTime())||d.getFullYear()!==y||d.getMonth()!==m-1||d.getDate()!==day||d.getHours()!==hour||d.getMinutes()!==minute)
+  throw new Error('La fecha de '+label+' no es válida. Comprobá día, mes y hora.');
+ return d.toISOString();
+}
 const fresh=()=>({
  id:'',period:new Date().toISOString().slice(0,7),title:'Sorteo mensual MITOBICEL',subtitle:'Premios, experiencias y oportunidades para nuestros clientes.',
  store_name:'MITOBICEL 1',prizes:'',starts_at:'',ends_at:'',draw_at:'',
  status:'draft' as 'draft'|'live'|'closed',results_published:false,terms:'',video_url:'',
- video_title:'Conocé las entregas de nuestros premios',
- free_instructions:'Sin obligación de compra: elegí la opción gratuita en el formulario, una participación por persona y mes.'
+ video_title:'Conocé las entregas de nuestros premios',prize_image_url:'',
+ free_instructions:'Sin obligación de compra: el formulario ofrece una participación gratuita por persona en cada edición. Podés sumar participaciones adicionales mediante compras distintas y códigos válidos de un solo uso.'
 });
 type Editor=ReturnType<typeof fresh>;
-const publicLink=(code:string)=>typeof window==='undefined'?'':window.location.origin+'/sorteos?codigo='+code;
+const publicLink=()=>typeof window==='undefined'?'':window.location.origin+'/sorteos';
 const asEditor=(c:Campaign):Editor=>({
  id:c.id,period:c.period,title:c.title,subtitle:c.subtitle,store_name:c.store_name.trim().toLowerCase()==='temper'?'MITOBICEL 1':c.store_name,prizes:(c.prizes||[]).join('\n'),
  starts_at:local(c.starts_at),ends_at:local(c.ends_at),draw_at:local(c.draw_at),
  status:c.status,results_published:c.results_published,terms:c.terms,video_url:c.video_url,
- video_title:c.video_title,free_instructions:c.free_instructions
+ video_title:c.video_title,free_instructions:c.free_instructions,prize_image_url:c.prize_image_url||''
 });
 function randomCode(){
  const bytes=crypto.getRandomValues(new Uint8Array(12));
@@ -48,7 +70,17 @@ export default function SorteosAdmin(){
  const [codes,setCodes]=useState<Code[]>([]),[entries,setEntries]=useState<Entry[]>([]),[winners,setWinners]=useState<Winner[]>([]);
  const [quantity,setQuantity]=useState(25),[drawPrize,setDrawPrize]=useState('');
  const [printed,setPrinted]=useState<Code[]>([]);
+ const [qrImage,setQrImage]=useState('');
+ const [sharedTerms,setSharedTerms]=useState('');
+ const [sharedFree,setSharedFree]=useState('Sin obligación de compra: la vía gratuita permite una participación por DNI en cada edición. Las participaciones por compras verificadas son adicionales.');
+ const [photoBusy,setPhotoBusy]=useState(false);
  const db=getDb();
+ useEffect(()=>{
+  let alive=true;
+  const init=async()=>{
+   try{const data=await QRCode.toDataURL(publicLink(),{width:820,margin:3,color:{dark:'#052a18',light:'#ffffff'}});if(alive)setQrImage(data);}catch{}
+  };void init();return()=>{alive=false;};
+ },[]);
  const update=<K extends keyof Editor>(key:K,value:Editor[K])=>setForm(s=>({...s,[key]:value}));
  const load=useCallback(async(selected?:string)=>{
   const d=getDb();if(!d)return;
@@ -56,7 +88,12 @@ export default function SorteosAdmin(){
   if(e){setError('No está instalada la base de sorteos. Ejecutá supabase/sorteos_mensuales.sql: '+e.message);return;}
   setError('');const all=(data||[]) as Campaign[];setCampaigns(all);
   const active=all.find(c=>c.id===selected)||all.find(c=>c.id===form.id)||all[0];
+  const {data:settings}=await d.from('raffle_settings').select('terms,free_instructions').eq('id',1).maybeSingle();
+  if(settings){
+   setSharedTerms(settings.terms||'');if(settings.free_instructions)setSharedFree(settings.free_instructions);
+  }
   if(active){setForm(asEditor(active));await loadDetails(active.id);}
+  else if(settings)setForm(current=>({...current,terms:settings.terms||'',free_instructions:settings.free_instructions||current.free_instructions}));
  },[form.id]);
  async function loadDetails(id:string){
   const d=getDb();if(!d)return;
@@ -94,8 +131,8 @@ export default function SorteosAdmin(){
   e.preventDefault();if(!db||busy)return;
   setError('');setNotice('');
   let dates:string[];
-  try{dates=[iso(form.starts_at),iso(form.ends_at),iso(form.draw_at)];}
-  catch{setError('Completá fechas válidas de inicio, cierre y sorteo.');return;}
+  try{dates=[iso(form.starts_at,'inicio de inscripción'),iso(form.ends_at,'cierre de inscripción'),iso(form.draw_at,'sorteo')];}
+  catch(err){setError(err instanceof Error?err.message:'Revisá las fechas del sorteo.');return;}
   if(!(dates[0]<dates[1]&&dates[1]<=dates[2])){setError('El cierre debe ser posterior al inicio y el sorteo debe ser posterior al cierre.');return;}
   const prizes=form.prizes.split('\n').map(p=>p.trim()).filter(Boolean);
   const nextStatus=activate?'live':form.status;
@@ -116,7 +153,7 @@ export default function SorteosAdmin(){
    starts_at:dates[0],ends_at:dates[1],draw_at:dates[2],
    status:nextStatus,results_published:form.results_published,
    terms:form.terms.trim(),video_url:form.video_url.trim(),
-   video_title:form.video_title.trim(),free_instructions:form.free_instructions.trim()
+   video_title:form.video_title.trim(),free_instructions:form.free_instructions.trim(),prize_image_url:form.prize_image_url
   };
   const request=form.id?db.from('raffle_campaigns').update(values).eq('id',form.id).select('id').single():
     db.from('raffle_campaigns').insert(values).select('id').single();
@@ -132,7 +169,7 @@ export default function SorteosAdmin(){
   const {data,error:e}=await db.from('raffle_codes').insert(links).select('id,code,store_name,used_at,campaign_id');
   if(e)setError(e.message);
   else{
-   const added=(data||[]) as Code[];setPrinted(added);setNotice(count+' códigos únicos generados. Descargá o imprimí los QR para entregarlos por bulto.');
+   const added=(data||[]) as Code[];setPrinted(added);setNotice(count+' códigos de compra generados. Entregá un código diferente por cada compra validada. El QR de entrada siempre es el mismo.');
    await loadDetails(form.id);
   }
   setBusy(false);
@@ -141,24 +178,45 @@ export default function SorteosAdmin(){
   if(!codes.length)return;
   downloadText('mitobicel-codigos-'+form.period+'.csv',
    '\uFEFFcodigo,comercio,enlace,estado\n'+codes.map(c=>
-    [c.code,c.store_name,publicLink(c.code),c.used_at?'utilizado':'disponible'].map(x=>'"'+x.replace(/"/g,'""')+'"').join(',')
+    [c.code,c.store_name,publicLink(),c.used_at?'utilizado':'disponible'].map(x=>'"'+x.replace(/"/g,'""')+'"').join(',')
    ).join('\n'));
  }
+
  async function printQr(){
   const list=printed.length?printed:codes.filter(c=>!c.used_at).slice(0,100);
-  if(!list.length){setError('Primero generá códigos para imprimir.');return;}
+  if(!list.length){setError('Primero generá códigos de compra para entregar.');return;}
   const win=window.open('','_blank');
-  if(!win){setError('Permití las ventanas emergentes para imprimir los QR.');return;}
-  win.document.write('<title>QR MITOBICEL · '+form.period+'</title><p>Generando talonarios QR…</p>');
-  try{
-   const cards=await Promise.all(list.map(async c=>{
-    const png=await QRCode.toDataURL(publicLink(c.code),{width:220,margin:1,errorCorrectionLevel:'M'});
-    return '<article><img src="'+png+'"/><strong>MITOBICEL · SORTEOS</strong><small>'+c.store_name+'</small><code>'+c.code+'</code></article>';
-   }));
-   win.document.open();
-   win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>QR Sorteos MITOBICEL</title><style>*{box-sizing:border-box}body{font-family:Arial;margin:16px}h1{font-size:16px}.sheet{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}article{border:1px dashed #999;padding:10px;text-align:center;break-inside:avoid;display:flex;flex-direction:column;align-items:center}article img{width:100%;max-width:135px}strong{font-size:9px;margin:4px}small{font-size:9px}code{font-size:9px;margin-top:4px}@media print{button{display:none}.sheet{gap:8px}article{page-break-inside:avoid}}</style></head><body><button onclick="window.print()">Imprimir / Guardar PDF</button><h1>MITOBICEL · Sorteos '+form.period+' · '+form.store_name+'</h1><p>Un QR único por bulto. Entregar uno por compra. Conservar los restantes hasta su distribución.</p><section class="sheet">'+cards.join('')+'</section></body></html>');
-   win.document.close();win.focus();
-  }catch{win.close();setError('No se pudieron generar los códigos QR. Intentá nuevamente.');}
+  if(!win){setError('Permití la ventana emergente para imprimir los códigos.');return;}
+  // Only textual vouchers, no distinct QR. Single general QR is printed from its own action.
+  const items=list.map(c=>'<article><strong>MITOBICEL 1 · SORTEOS</strong><p>Escaneá el QR general del local y anotate con este código de compra:</p><code>'+c.code+'</code><small>Válido una sola vez · No compartir hasta entregarlo</small></article>').join('');
+  win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Códigos MITOBICEL</title><style>*{box-sizing:border-box}body{font-family:Arial;margin:15px}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}article{border:1px dashed #888;padding:16px;min-height:135px;display:flex;align-items:center;text-align:center;flex-direction:column;justify-content:center;break-inside:avoid}strong{font-size:12px}p,small{font-size:10px}code{font-size:15px;font-weight:900;letter-spacing:1px;overflow-wrap:anywhere}@media print{button{display:none}}</style></head><body><button onclick="print()">Imprimir comprobantes</button><h1>MITOBICEL 1 · Códigos por compra</h1><p>Cada cupón corresponde a una compra verificada; no son códigos QR.</p><section class="sheet">'+items+'</section></body></html>');
+  win.document.close();win.focus();
+ }
+ function downloadGeneralQr(){
+  if(!qrImage)return;
+  const link=document.createElement('a');link.href=qrImage;link.download='MITOBICEL-QR-GENERAL-SORTEOS.png';link.click();
+ }
+ async function saveGeneralTerms(){
+  if(!db||busy)return;
+  if(sharedTerms.trim().length<80){setError('Completá las bases generales reales (mínimo 80 caracteres) antes de guardarlas.');return;}
+  setBusy(true);setError('');setNotice('');
+  const {error:e}=await db.from('raffle_settings').upsert({id:1,terms:sharedTerms.trim(),free_instructions:sharedFree.trim()},{onConflict:'id'});
+  if(e)setError('No se pudieron guardar las bases: '+e.message+'. Ejecutá la actualización SQL de sorteos.');
+  else{if(!form.id||form.status==='draft')setForm(f=>({...f,terms:sharedTerms.trim(),free_instructions:sharedFree.trim()}));setNotice('Bases generales guardadas. Las próximas ediciones reutilizarán este texto. Las bases de las ediciones publicadas se conservan.');}
+  setBusy(false);
+ }
+ async function uploadPrize(file:File|undefined){
+  if(!db||!form.id||!file||photoBusy)return;
+  if(file.type!=='image/png'||file.size>5*1024*1024){setError('Seleccioná un PNG de máximo 5 MB.');return;}
+  setError('');setPhotoBusy(true);
+  const path='premios/'+form.id+'/'+crypto.randomUUID()+'.png';
+  const {error:uploadError}=await db.storage.from('raffle-prizes').upload(path,file,{contentType:'image/png',cacheControl:'3600',upsert:false});
+  if(uploadError){setError('Error al cargar imagen: '+uploadError.message+'. Ejecutá la migración de sorteos.');setPhotoBusy(false);return;}
+  const url=db.storage.from('raffle-prizes').getPublicUrl(path).data.publicUrl;
+  const {error:updateError}=await db.from('raffle_campaigns').update({prize_image_url:url}).eq('id',form.id);
+  if(updateError)setError('Foto subida pero no guardada en la edición: '+updateError.message);
+  else{setForm(f=>({...f,prize_image_url:url}));setNotice('Imagen PNG del premio publicada.');}
+  setPhotoBusy(false);
  }
  async function draw(){
   if(!db||!form.id||!drawPrize.trim()||busy)return;
@@ -187,9 +245,21 @@ export default function SorteosAdmin(){
    </form>:<>
     <nav className="raffle-admin-nav" aria-label="Apartados del superadmin">
      <a href="/admin">Catálogo 1</a><a href="/admin/catalogo-2">Catálogo 2</a><a className="active" href="/admin/sorteos">Sorteos · MITOBICEL</a>
-     <button onClick={()=>{setForm(fresh());setCodes([]);setEntries([]);setWinners([]);setNotice('Creá una nueva edición y guardala.');}}>+ Nueva edición</button>
+     <button onClick={()=>{setForm({...fresh(),terms:sharedTerms,free_instructions:sharedFree});setCodes([]);setEntries([]);setWinners([]);setNotice('Creá una nueva edición y guardala.');}}>+ Nueva edición</button>
     </nav>
-    <div className="raffle-admin-kpis"><div><strong>{campaigns.length}</strong><span>Ediciones</span></div><div><strong>{codes.length}</strong><span>QR generados (máx. 1000 visibles)</span></div><div><strong>{entries.length}</strong><span>Participaciones (máx. 2000 visibles)</span></div><div><strong>{winners.length}</strong><span>Ganadores de esta edición</span></div></div>
+    <div className="raffle-admin-kpis"><div><strong>{campaigns.length}</strong><span>Ediciones</span></div><div><strong>{codes.length}</strong><span>Códigos de compra (máx. 1000 visibles)</span></div><div><strong>{entries.length}</strong><span>Participaciones (máx. 2000 visibles)</span></div><div><strong>{winners.length}</strong><span>Ganadores de esta edición</span></div></div>
+    <div className="raffle-admin-panel">
+     <h2>QR general único · MITOBICEL Sorteos</h2>
+     <p>Imprimí este mismo QR y dejalo visible en MITOBICEL 1. Siempre apunta a <strong>/sorteos</strong>, no cambia entre compras ni entre meses. Cada compra validada utiliza un código de un solo uso, separado del QR.</p>
+     <div className="raffle-admin-general-qr">{qrImage&&<img src={qrImage} alt="QR general del sitio MITOBICEL Sorteos"/>}<div><strong>Un QR para siempre</strong><p>Mostrale el mismo QR a todos los compradores. Para prevenir inscripciones falsas, entregá un código de compra distinto después de cada venta.</p><button type="button" className="raffle-cta" disabled={!qrImage} onClick={downloadGeneralQr}>Descargar QR fijo PNG</button></div></div>
+    </div>
+    <div className="raffle-admin-panel">
+     <h2>Bases y condiciones generales</h2>
+     <p>Se guardan una sola vez y se reutilizan al crear nuevas ediciones. No reemplazan retroactivamente las bases de un sorteo ya publicado. Verificá que las bases sean legalmente adecuadas y completen datos particulares de cada premio y fecha.</p>
+     <label className="raffle-admin-general-label">Texto general<textarea value={sharedTerms} rows={6} onChange={e=>setSharedTerms(e.target.value)} placeholder="Organizador, condiciones, ámbito geográfico, requisitos, protección de datos, participación gratuita, procedimiento y probabilidades…"/></label>
+     <label className="raffle-admin-general-label">Participación sin compra<textarea value={sharedFree} rows={2} onChange={e=>setSharedFree(e.target.value)}/></label>
+     <button className="raffle-cta" type="button" disabled={busy} onClick={()=>void saveGeneralTerms()}>Guardar bases para próximas ediciones</button>
+    </div>
     <div className="raffle-admin-panel">
      <h2>Configurar edición mensual</h2>
      <div className="raffle-admin-editions">{campaigns.map(c=><button key={c.id} className={form.id===c.id?'active':''} type="button" onClick={()=>{setForm(asEditor(c));void loadDetails(c.id);}}>{c.period} · {c.status}</button>)}</div>
@@ -209,8 +279,14 @@ export default function SorteosAdmin(){
       <label>Fecha y hora del sorteo<input type="datetime-local" value={form.draw_at} required onChange={e=>update('draw_at',e.target.value)}/></label>
       <label>Estado<select value={form.status} onChange={e=>update('status',e.target.value as Editor['status'])}><option value="draft">Borrador (no público)</option><option value="live">Inscripciones habilitadas (con fechas y bases)</option><option value="closed">Cerrado / resultados</option></select></label>
       <label className="wide">Premios CONFIRMADOS (uno por renglón)<textarea rows={4} value={form.prizes} placeholder="Ej.: Smart TV 50 pulgadas · 1 unidad" onChange={e=>update('prizes',e.target.value)}/></label>
-      <label className="wide">Bases y condiciones de la edición<textarea rows={7} value={form.terms} placeholder="Organizador, vigencia, alcance geográfico, requisitos, premios, probabilidades, vía gratuita, procedimiento de selección, costos, validación de DNI, datos personales…" onChange={e=>update('terms',e.target.value)}/></label>
-      <label className="wide">Procedimiento gratuito<textarea rows={2} value={form.free_instructions} onChange={e=>update('free_instructions',e.target.value)}/></label>
+      <label className="wide">Bases aplicables a esta edición (se copia el texto general, pero podés precisar condiciones particulares)<textarea rows={6} value={form.terms} onChange={e=>update('terms',e.target.value)} placeholder="Primero guardá las bases generales de MITOBICEL."/></label>
+      <label className="wide">Participación sin obligación de compra (heredada de las bases generales)<textarea rows={2} value={form.free_instructions} onChange={e=>update('free_instructions',e.target.value)}/></label>
+      <div className="raffle-admin-photo wide"><strong>Foto PNG del premio de esta edición</strong>
+       <p>Guardá la edición antes de subir la imagen. Se mostrará en la página pública junto al premio confirmado.</p>
+       {form.prize_image_url&&<img src={form.prize_image_url} alt="Vista previa de la foto del premio"/>}
+       <label>Seleccionar foto PNG (máximo 5 MB)<input type="file" accept="image/png" disabled={!form.id||photoBusy} onChange={e=>{void uploadPrize(e.target.files?.[0]);e.currentTarget.value='';}}/></label>
+       {photoBusy&&<p>Subiendo imagen…</p>}
+      </div>
       <label className="wide">URL video de fábrica / entregas (YouTube, Vimeo o MP4)<input type="url" value={form.video_url} onChange={e=>update('video_url',e.target.value)} placeholder="https://…"/></label>
       <label className="wide">Título del video<input value={form.video_title} onChange={e=>update('video_title',e.target.value)}/></label>
       <label className="raffle-admin-check wide"><input type="checkbox" checked={form.results_published} onChange={e=>update('results_published',e.target.checked)}/> Publicar los ganadores (DNI parcialmente oculto) durante el mes siguiente al sorteo</label>
@@ -222,14 +298,14 @@ export default function SorteosAdmin(){
      <p className="raffle-admin-legal">Antes de publicar, revisá las bases con asesoramiento legal: modalidad sin obligación de compra, premios reales, fechas, probabilidad, alcance, privacidad y obligaciones fiscales. No publicar nombres completos ni DNI de participantes.</p>
     </div>
     <div className="raffle-admin-panel" id="talonarios">
-     <h2>Generar QR únicos por bulto · {form.store_name||'MITOBICEL 1'}</h2>
-     <p>Un QR por bulto entregado. Cada código válido se consume al inscribirse. La URL pública permanece fija: <strong>/sorteos</strong>.</p>
+     <h2>Comprobantes de compra · Códigos de un solo uso</h2>
+     <p>El QR siempre es el mismo. Cuando se concreta una compra habilitada, entregá un código textual diferente (uno por participación autorizada). El sistema lo consume al inscribirse; el mismo DNI puede participar nuevamente con otra compra válida, incluso el mismo día.</p>
      <div className="raffle-admin-qr-actions"><label>Cantidad de nuevos códigos<input type="number" min={1} max={200} value={quantity} onChange={e=>setQuantity(Number(e.target.value))}/></label>
       <button type="button" className="raffle-cta" disabled={!canManage||busy} onClick={()=>void generate()}>Generar códigos</button>
       <button type="button" disabled={!codes.length} onClick={exportCodes}>Descargar CSV</button>
-      <button type="button" disabled={!codes.length} onClick={()=>void printQr()}>Imprimir QR por bulto</button>
+      <button type="button" disabled={!codes.length} onClick={()=>void printQr()}>Imprimir códigos de compra</button>
      </div>
-     <p className="raffle-admin-hint">Elegí el talonario recién generado o los últimos 100 QR sin utilizar para imprimir. Si un QR ya se utilizó, el sistema no permite otra inscripción con ese código.</p>
+     <p className="raffle-admin-hint">Podés imprimir los códigos nuevos o los últimos 100 sin utilizar. Nunca entregues un código antes de verificar la compra. El mismo código no se puede volver a usar.</p>
      {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'}</small></div>)}</div>}
     </div>
     <div className="raffle-admin-panel"><h2>Participantes de esta edición</h2><p>Los DNI completos son información privada y solo se visualizan acá para verificar a la persona al entregar un premio.</p>

@@ -205,3 +205,20 @@ Las cuentas Supabase conectadas al asistente en esta conversación no incluyen M
 La página pública consulta premios, fechas, resultados y entregas cada 60 segundos. El video admite URL YouTube, Vimeo o MP4, con reproductor vertical 9:16.
 
 **Seguridad y cumplimiento:** los cupones se generan con aleatoriedad criptográfica; el canje es atómico en PostgreSQL y no permite reutilización. Las tablas privadas no permiten SELECT público; las RPCs públicas revelan solo información mínima. Como cualquier formulario anónimo, antes de operar campañas grandes, es recomendable poner límites adicionales de tráfico/verificación humana y fijar un período de retención de datos. La legalidad de la promoción, inclusive modalidad sin obligación de compra y la comunicación de premios, fechas y probabilidades, debe ser revisada antes de lanzarla (Decreto 961/2017 y normativa vigente aplicable).
+
+
+
+### QR ÚNICO de Sorteos y foto del premio (actualización 31/10/2026)
+
+**Importante**: Primero ejecutar \`supabase/sorteos_mensuales.sql\`, si todavía no se hizo. Después ejecutar solamente
+\`supabase/sorteos_qr_unico_imagen_premio_bases.sql\` en SQL Editor del proyecto Supabase de MITOBICEL.
+La migración es aditiva, conserva códigos, inscripciones, ganadores y los datos de los dos catálogos.
+
+- \`/sorteos\`: URL pública fija, **un solo QR para todos** (descargable en \`/admin/sorteos\`).
+- **Cada compra validada** puede generar un código textual de un solo uso, emitido por el personal de MITOBICEL 1 después de la venta. El QR no cambia; se entrega al comprador el código en un comprobante impreso para que complete la inscripción. La misma persona puede registrarse varias veces en un día si tiene códigos de compras diferentes.
+- **Sin obligación de compra**: existe vía gratuita en el mismo formulario, con límite según condiciones (actualmente una solicitud gratuita por DNI por edición; no afecta a compras múltiples). Antes de operar, revisar con asesoramiento legal la equivalencia/elegibilidad de vías, la privacidad y el mecanismo de selección.
+- **Bases generales reutilizables**: se almacenan en \`raffle_settings\`, accesibles solo al admin. Al crear una edición se copian a \`raffle_campaigns.terms\`; una edición ya publicada conserva su texto para registro. Las bases deben contener datos verídicos específicos de los premios, fecha y región antes de publicarse.
+- **Foto del premio**: desde el superadmin, guardar la edición y subir un archivo PNG de máximo 5MB. Se almacena en el nuevo bucket público \`raffle-prizes\` con subidas restringidas al admin; se mostrará en el hero y junto a los premios confirmados.
+- **Fechas**: los campos son datetime-local con conversión explícita de hora local; el admin indica qué fecha debe corregirse en vez de dar un error genérico. La hora se interpreta según el huso horario del navegador que realiza la carga.
+
+Los usuarios no pueden fabricar códigos válidos ni reutilizarlos (transacción SQL atómica con bloqueo de fila). Un QR estático **no verifica por sí solo** que exista una compra; la entrega controlada del código por personal autorizado es el requisito operativo.
