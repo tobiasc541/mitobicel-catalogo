@@ -10,6 +10,7 @@ type Campaign={
  free_instructions:string;
 };
 type Winner={prize:string;winner_label:string;dni_mask:string;drawn_at:string;delivered:boolean;delivery_video_url:string;delivery_photo_url:string};
+type Delivery={period:string;prize:string;delivered_at:string;video_url:string;photo_url:string};
 const date=(iso:string)=>new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
 function embedUrl(raw:string):string|null{
  try{
@@ -42,6 +43,7 @@ function Video({url,title}:{url:string;title:string}){
 export default function SorteosPublic(){
  const [campaign,setCampaign]=useState<Campaign|null>(null);
  const [winners,setWinners]=useState<Winner[]>([]);
+ const [deliveries,setDeliveries]=useState<Delivery[]>([]);
  const [ready,setReady]=useState(false),[problem,setProblem]=useState('');
  const [firstName,setFirstName]=useState(''),[lastName,setLastName]=useState('');
  const [dni,setDni]=useState(''),[phone,setPhone]=useState(''),[code,setCode]=useState('');
@@ -58,6 +60,8 @@ export default function SorteosPublic(){
    const {data,error}=await db.from('raffle_campaigns').select('*').in('status',['live','closed']).order('period',{ascending:false}).limit(5);
    if(!live)return;
    if(error){setProblem('La plataforma de sorteos todavía no está configurada.');setReady(true);return;}
+   const archive=await db.rpc('raffle_public_deliveries');
+   if(live&&!archive.error)setDeliveries((archive.data||[]) as Delivery[]);
    const rows=(data||[]) as Campaign[];
    const current=rows.find(x=>x.status==='live'&&Date.now()<=new Date(x.draw_at).getTime())||rows[0]||null;
    setCampaign(current);
@@ -165,8 +169,8 @@ export default function SorteosPublic(){
   <section className="raffle-section raffle-video-section" id="entregas">
    <div><span className="raffle-eyebrow">TRANSPARENCIA EN CADA ENTREGA</span><h2>Historias reales. <em>Premios entregados.</em></h2><p>Seguí los videos de las entregas oficiales y conocé a quienes recibieron sus premios.</p></div>
    <Video url={campaign?.video_url||''} title={campaign?.video_title||'Entregas MITOBICEL'}/>
-   {winners.filter(w=>w.delivery_video_url||w.delivery_photo_url).length>0&&<div className="raffle-delivery-links">
-    {winners.filter(w=>w.delivery_video_url||w.delivery_photo_url).map((w,i)=><a key={i} href={w.delivery_video_url||w.delivery_photo_url} rel="noopener noreferrer" target="_blank">{w.prize} · Ver entrega ↗</a>)}
+   {deliveries.length>0&&<div className="raffle-delivery-links">
+    {deliveries.map((d,i)=><a key={i} href={d.video_url||d.photo_url} rel="noopener noreferrer" target="_blank">{d.prize} · {d.period} · Ver entrega ↗</a>)}
    </div>}
   </section>
   {campaign?.terms&&<section className="raffle-section raffle-terms" id="bases"><details><summary>Bases y condiciones de la edición {campaign.period}</summary><p>{campaign.terms}</p></details></section>}
