@@ -420,7 +420,7 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .catalog-2-progress{width:100%;max-width:650px;height:12px;background:#d3e7d9;overflow:hidden;border-radius:30px}
 .catalog-2-progress>div{height:100%;background:linear-gradient(90deg,#047832,#28bc6c);transition:width .25s ease}
 .catalog-provenance{display:flex;align-items:center;gap:6px;padding:9px 11px;background:#f4f9f5;border-radius:10px;align-self:center;color:#54745c;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
-@media(min-width:761px){.full-catalog-app .product-card .table-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}.full-catalog-app .product-card table{min-width:630px}}
+
 @media(max-width:760px){.full-catalog-notice{font-size:11px;margin-bottom:15px;padding:12px}.full-catalog-app .product-card table{max-width:100%}.full-catalog-admin .catalog-2-import{padding:18px 14px}.catalog-provenance{grid-column:1/-1}}
 
 /* Catálogo 2: importes con unidad explícita en móviles y desktop */
@@ -432,7 +432,7 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  white-space:nowrap;
 }
 .full-catalog-app .product-card .price-list{font-variant-numeric:tabular-nums}
-.full-catalog-app .table-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
 .full-catalog-app .product-card table{border-collapse:collapse}
 @media(max-width:760px){
  .full-catalog-app .product-card .price-denominator{white-space:nowrap}
@@ -457,3 +457,119 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .catalog2-import-log{max-height:220px;overflow:auto;font-size:12px;padding:12px;border-radius:12px;background:#f6f8f6}
 .catalog2-import-log p{margin:0;padding:4px 0}
 @media(max-width:600px){.catalog2-mass-import>.btn{align-self:stretch}.catalog2-import-stats span{flex:1}}
+
+
+/* Catálogo 2: tabla adaptativa sin desplazamiento horizontal.
+   Causa corregida: la antigua tabla de 630px excedía cada tarjeta de dos columnas.
+   Una presentación se muestra como una ficha de dos filas, con toda la acción visible. */
+.full-catalog-app .product-grid.masonry-grid,
+.full-catalog-app .masonry-column,
+.full-catalog-app .product-card{min-width:0;width:100%}
+.full-catalog-app .product-card .table-scroller{
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ overflow:visible;
+}
+.full-catalog-app .product-card table{
+ display:block;
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ table-layout:auto;
+ border-collapse:collapse;
+}
+.full-catalog-app .product-card thead{display:none}
+.full-catalog-app .product-card tbody{display:block;width:100%;min-width:0}
+.full-catalog-app .product-card tbody tr{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ grid-template-rows:auto auto;
+ gap:10px 12px;
+ align-items:start;
+ width:100%;
+ min-width:0;
+ padding:15px 17px;
+ border-bottom:1px solid #e6efe9;
+ transition:background-color .18s ease;
+}
+.full-catalog-app .product-card tbody tr:hover{background:#ecfaf0}
+.full-catalog-app .product-card tbody td{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ justify-content:flex-start;
+ min-width:0;
+ max-width:100%;
+ margin:0;
+ padding:0!important;
+ border:0!important;
+ color:#273d2f;
+ font-size:12px;
+ line-height:1.4;
+ white-space:normal!important;
+ overflow-wrap:anywhere;
+}
+.full-catalog-app .product-card tbody td:before{
+ content:attr(data-label);
+ display:block;
+ margin-bottom:5px;
+ font-family:var(--mono);
+ color:#758779;
+ font-size:9px;
+ font-weight:800;
+ letter-spacing:.25px;
+ line-height:1.35;
+}
+.full-catalog-app .product-card tbody td:nth-child(1){grid-column:1;grid-row:1}
+.full-catalog-app .product-card tbody td:nth-child(2){grid-column:2 / -1;grid-row:1}
+.full-catalog-app .product-card tbody td:nth-child(3){grid-column:1;grid-row:2}
+.full-catalog-app .product-card tbody td:nth-child(4){grid-column:2;grid-row:2}
+.full-catalog-app .product-card tbody td:nth-child(5){
+ grid-column:3 / -1;
+ grid-row:2;
+ align-self:end;
+}
+.full-catalog-app .product-card tbody td.size{font-size:14px;line-height:1.35}
+.full-catalog-app .product-card tbody td.price{
+ font-size:12px;
+ line-height:1.4;
+ letter-spacing:-.15px;
+ font-variant-numeric:tabular-nums;
+ overflow-wrap:normal;
+ word-break:normal;
+}
+.full-catalog-app .product-card tbody td.price small{
+ display:block;
+ margin-top:3px;
+ font-size:9px;
+ letter-spacing:0;
+}
+.full-catalog-app .product-card tbody td.add-cell:before{display:none}
+.full-catalog-app .product-card .add-product{
+ display:inline-flex;
+ justify-content:center;
+ align-items:center;
+ width:100%;
+ min-height:44px;
+ padding:8px 9px;
+ font-size:11px;
+ line-height:1.2;
+ white-space:normal;
+ text-align:center;
+}
+.full-catalog-app .product-head{
+ min-width:0;
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:start;
+}
+.full-catalog-app .product-title-area{min-width:0}
+.full-catalog-app .product-head h3{overflow-wrap:anywhere;word-break:normal;hyphens:auto}
+@media(max-width:400px){
+ .full-catalog-app .product-card tbody tr{gap:10px 9px;padding:14px 12px}
+ .full-catalog-app .product-card tbody td:nth-child(3){grid-column:1 / span 2}
+ .full-catalog-app .product-card tbody td:nth-child(4){grid-column:3 / span 2}
+ .full-catalog-app .product-card tbody td:nth-child(5){grid-column:1 / -1;grid-row:3}
+ .full-catalog-app .product-card .add-product{min-height:48px;font-size:12px}
+}
