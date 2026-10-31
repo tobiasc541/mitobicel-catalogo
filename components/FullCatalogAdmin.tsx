@@ -366,6 +366,7 @@ export default function FullCatalogAdmin(){
      <div className="admin-catalog-switch" role="navigation" aria-label="Administrar catálogos">
       <a href="/admin" className="admin-catalog-tab">Catálogo 1 · Tarjetas QR</a>
       <a href={FULL_CATALOG_ADMIN_PATH} className="admin-catalog-tab active" aria-current="page">Catálogo 2 · Clientes</a>
+      <a href="/admin/sorteos" className="admin-catalog-tab">Sorteos · MITOBICEL</a>
       <a href={FULL_CATALOG_PATH} className="admin-catalog-preview" target="_blank" rel="noopener noreferrer">Vista pública ↗</a>
      </div>
      <div className="admin-summary">
