@@ -152,7 +152,8 @@ export default function SorteosPublic(){
     <span className="raffle-eyebrow">SORTEOS PARA BUSCAS, PAPELERAS Y DISTRIBUIDORES</span>
     <h2>Registrá tu <em>participación.</em></h2>
     <p>Tu esfuerzo merece reconocimiento. Completá tus datos para participar en la edición vigente; si resultás ganador, tu nombre y DNI se comprobarán con tu documento. Nunca publicamos el DNI completo.</p>
-    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · '+campaign.store_name:'Consultá esta página para próximos anuncios'}</small></div>
+    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · '+campaign.store_name:'Consultá esta página para próximos anuncios'}</small>
+     {campaign&&<small>Inscripciones: {date(campaign.starts_at)} hasta {date(campaign.ends_at)}.</small>}</div>
    </div>
    <div className="raffle-register-card">
     <span className="raffle-eyebrow">FORMULARIO OFICIAL</span>

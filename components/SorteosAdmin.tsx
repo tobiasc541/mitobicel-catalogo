@@ -90,7 +90,7 @@ export default function SorteosAdmin(){
   else{setAuthorized(true);setPassword('');}
   setBusy(false);
  }
- async function save(e:React.FormEvent){
+ async function save(e:React.SyntheticEvent,activate=false){
   e.preventDefault();if(!db||busy)return;
   setError('');setNotice('');
   let dates:string[];
@@ -98,23 +98,30 @@ export default function SorteosAdmin(){
   catch{setError('Completá fechas válidas de inicio, cierre y sorteo.');return;}
   if(!(dates[0]<dates[1]&&dates[1]<=dates[2])){setError('El cierre debe ser posterior al inicio y el sorteo debe ser posterior al cierre.');return;}
   const prizes=form.prizes.split('\n').map(p=>p.trim()).filter(Boolean);
-  if(form.status!=='draft'&&(!prizes.length||form.terms.trim().length<80)){
+  const nextStatus=activate?'live':form.status;
+  if(!form.period||!form.title.trim()||!form.store_name.trim()){
+   setError('Completá el mes, el título y el comercio autorizado.');return;
+  }
+  if(nextStatus==='live'&&Date.parse(dates[1])<Date.now()){
+   setError('La fecha de cierre ya pasó. Elegí un período vigente antes de activar inscripciones.');return;
+  }
+  if(nextStatus!=='draft'&&(!prizes.length||form.terms.trim().length<80)){
    setError('Para habilitar inscripciones, cargá premios realmente confirmados y las bases legales completas (mínimo 80 caracteres).');return;
   }
-  if(form.results_published&&form.status==='draft'){setError('No se publican resultados de una edición en borrador.');return;}
+  if(form.results_published&&nextStatus==='draft'){setError('No se publican resultados de una edición en borrador.');return;}
   setBusy(true);
   const values={
    period:form.period,title:form.title.trim(),subtitle:form.subtitle.trim(),
    store_name:form.store_name.trim()||'Temper',prizes,
    starts_at:dates[0],ends_at:dates[1],draw_at:dates[2],
-   status:form.status,results_published:form.results_published,
+   status:nextStatus,results_published:form.results_published,
    terms:form.terms.trim(),video_url:form.video_url.trim(),
    video_title:form.video_title.trim(),free_instructions:form.free_instructions.trim()
   };
   const request=form.id?db.from('raffle_campaigns').update(values).eq('id',form.id).select('id').single():
     db.from('raffle_campaigns').insert(values).select('id').single();
   const {data,error:saveError}=await request;
-  if(saveError){setError(saveError.message);}else{setNotice('Edición guardada correctamente.');await load(data.id);}
+  if(saveError){setError(saveError.message);}else{setNotice(activate?'Edición publicada. Las inscripciones están disponibles dentro del período configurado.':'Edición guardada correctamente.');await load(data.id);}
   setBusy(false);
  }
  async function generate(){
@@ -186,6 +193,12 @@ export default function SorteosAdmin(){
     <div className="raffle-admin-panel">
      <h2>Configurar edición mensual</h2>
      <div className="raffle-admin-editions">{campaigns.map(c=><button key={c.id} className={form.id===c.id?'active':''} type="button" onClick={()=>{setForm(asEditor(c));void loadDetails(c.id);}}>{c.period} · {c.status}</button>)}</div>
+     <div className="raffle-admin-activation" role="status">
+      <strong>{form.id&&form.status==='live'?'Edición publicada':'Activación de inscripciones'}</strong>
+      <p>{form.id&&form.status==='live'
+        ?'La inscripción se abre y cierra automáticamente según las fechas configuradas. Comprobá la página pública y probá un código de prueba.'
+        :'Para abrir las inscripciones: definí fechas vigentes, cargá premios confirmados y las bases legales, y activá esta edición. Sin esos datos el formulario público permanecerá cerrado.'}</p>
+     </div>
      <form className="raffle-admin-form" onSubmit={e=>void save(e)}>
       <label>Mes de la edición<input type="month" required value={form.period} onChange={e=>update('period',e.target.value)}/></label>
       <label>Comercio autorizado (Temper · Temperley)<input value={form.store_name} onChange={e=>update('store_name',e.target.value)} required/></label>
@@ -201,7 +214,10 @@ export default function SorteosAdmin(){
       <label className="wide">URL video de fábrica / entregas (YouTube, Vimeo o MP4)<input type="url" value={form.video_url} onChange={e=>update('video_url',e.target.value)} placeholder="https://…"/></label>
       <label className="wide">Título del video<input value={form.video_title} onChange={e=>update('video_title',e.target.value)}/></label>
       <label className="raffle-admin-check wide"><input type="checkbox" checked={form.results_published} onChange={e=>update('results_published',e.target.checked)}/> Publicar los ganadores (DNI parcialmente oculto) durante el mes siguiente al sorteo</label>
-      <button className="raffle-cta" disabled={busy} type="submit">Guardar edición ↗</button>
+      <div className="raffle-admin-activation-actions wide">
+       <button className="raffle-cta-secondary" disabled={busy} type="submit">Guardar borrador / cambios</button>
+       <button className="raffle-cta" disabled={busy} type="button" onClick={e=>void save(e,true)}>Publicar y habilitar inscripciones ↗</button>
+      </div>
      </form>
      <p className="raffle-admin-legal">Antes de publicar, revisá las bases con asesoramiento legal: modalidad sin obligación de compra, premios reales, fechas, probabilidad, alcance, privacidad y obligaciones fiscales. No publicar nombres completos ni DNI de participantes.</p>
     </div>
