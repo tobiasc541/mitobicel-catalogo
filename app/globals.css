@@ -912,3 +912,23 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
  .raffle-gifts-tile svg{width:36px;height:36px}
  .raffle-gifts-foot{font-size:8px}
 }
+
+/* Portada cargable de Sorteos: pieza PNG transparente, completa, sin recuadros extra. */
+.raffle-site .raffle-hero-art.raffle-gifts-hero:has(.raffle-hero-art-uploaded){
+ height:auto;min-height:360px;max-height:600px;border:0;box-shadow:none;
+ background:transparent!important;padding:0!important;overflow:visible;
+ display:flex;justify-content:center;align-items:center;
+}
+.raffle-site .raffle-gifts-hero:has(.raffle-hero-art-uploaded)::before{display:none!important}
+.raffle-hero-art-uploaded{display:block;width:100%;height:auto;max-height:590px;object-fit:contain;filter:drop-shadow(0 15px 20px rgba(11,66,31,.12))}
+.raffle-admin-hero-upload{display:grid;grid-template-columns:minmax(170px,1fr) minmax(200px,1fr);gap:20px;align-items:center;border:1px solid #cbe3d4;border-radius:17px;background:#f4fbf6;padding:20px}
+.raffle-admin-hero-upload>img{width:100%;max-width:330px;max-height:310px;object-fit:contain}
+.raffle-admin-hero-upload>div{min-width:0}
+.raffle-admin-hero-upload label{font-weight:800;font-size:13px;display:flex;flex-direction:column;gap:12px}
+.raffle-admin-hero-upload small{display:block;color:#51775e;line-height:1.6;font-size:11px;margin-top:12px}
+.raffle-admin-hero-placeholder{display:grid;place-items:center;min-height:180px;border:2px dashed #a3d1b1;border-radius:12px;color:#2b7151;font-size:12px}
+@media(max-width:680px){
+ .raffle-site .raffle-hero-art.raffle-gifts-hero:has(.raffle-hero-art-uploaded){min-height:0;max-height:none}
+ .raffle-hero-art-uploaded{max-height:none;max-width:480px}
+ .raffle-admin-hero-upload{grid-template-columns:1fr}
+}

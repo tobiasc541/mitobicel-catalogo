@@ -68,6 +68,7 @@ export default function SorteosPublic(){
  const [sending,setSending]=useState(false),[receipt,setReceipt]=useState('');
  const [now,setNow]=useState(Date.now());
  const [selectedExample,setSelectedExample]=useState<number|null>(null);
+ const [heroImageUrl,setHeroImageUrl]=useState('');
  useEffect(()=>{
   const codeFromUrl=new URLSearchParams(window.location.search).get('codigo');
   // Accept already printed legacy URLs, but the new QR is always /sorteos.
@@ -79,6 +80,8 @@ export default function SorteosPublic(){
    const {data,error}=await db.from('raffle_campaigns').select('*').in('status',['live','closed']).order('period',{ascending:false}).limit(5);
    if(!live)return;
    if(error){setProblem('La plataforma de sorteos todavía no está configurada.');setReady(true);return;}
+   const hero=await db.rpc('raffle_public_hero_image');
+   if(live&&!hero.error)setHeroImageUrl(typeof hero.data==='string'?hero.data:'');
    const archive=await db.rpc('raffle_public_deliveries');
    if(live&&!archive.error)setDeliveries((archive.data||[]) as Delivery[]);
    const rows=(data||[]) as Campaign[];
@@ -137,6 +140,9 @@ export default function SorteosPublic(){
     <div className="raffle-hero-info"><span><Icon name="award"/> Un agradecimiento a quienes nos eligen</span><span><Icon name="package"/> Una nueva participación por compra validada</span></div>
    </div>
    <div className="raffle-hero-art raffle-gifts-hero">
+    {heroImageUrl?
+     <img className="raffle-hero-art-uploaded" src={heroImageUrl} alt="MITOBICEL Sorteos: collage de premios posibles y agradecimiento a buscas, papeleras y distribuidores"/>:
+     <>
     <img className="raffle-gifts-logo" src="/logo-mitobicel.png" alt="MITOBICEL"/>
     <span className="raffle-gifts-ribbon">UN AGRADECIMIENTO A TU ESFUERZO</span>
     {campaign?.prize_image_url&&campaign.prizes.length?
@@ -149,6 +155,7 @@ export default function SorteosPublic(){
       <div className="raffle-gifts-tile raffle-gifts-home"><Icon name="award"/><span>Para tu hogar</span></div>
      </div>}
     <span className="raffle-gifts-foot">BUSCAS · PAPELERAS · DISTRIBUIDORES</span>
+     </>}
    </div>
   </section>
   <section className="raffle-section raffle-prizes" id="premios">

@@ -70,6 +70,8 @@ export default function SorteosAdmin(){
  const [sharedTerms,setSharedTerms]=useState('');
  const [sharedFree,setSharedFree]=useState('Sin obligación de compra: la vía gratuita permite una participación por DNI en cada edición. Las participaciones por compras verificadas son adicionales.');
  const [photoBusy,setPhotoBusy]=useState(false);
+ const [heroImageUrl,setHeroImageUrl]=useState('');
+ const [heroBusy,setHeroBusy]=useState(false);
  const db=getDb();
  useEffect(()=>{
   let alive=true;
@@ -84,9 +86,9 @@ export default function SorteosAdmin(){
   if(e){setError('No está instalada la base de sorteos. Ejecutá supabase/sorteos_mensuales.sql: '+e.message);return;}
   setError('');const all=(data||[]) as Campaign[];setCampaigns(all);
   const active=all.find(c=>c.id===selected)||all.find(c=>c.id===form.id)||all[0];
-  const {data:settings}=await d.from('raffle_settings').select('terms,free_instructions').eq('id',1).maybeSingle();
+  const {data:settings}=await d.from('raffle_settings').select('terms,free_instructions,hero_image_url').eq('id',1).maybeSingle();
   if(settings){
-   setSharedTerms(settings.terms||'');if(settings.free_instructions)setSharedFree(settings.free_instructions);
+   setSharedTerms(settings.terms||'');if(settings.free_instructions)setSharedFree(settings.free_instructions);setHeroImageUrl(settings.hero_image_url||'');
   }
   if(active){setForm(asEditor(active));await loadDetails(active.id);}
   else if(settings)setForm(current=>({...current,terms:settings.terms||'',free_instructions:settings.free_instructions||current.free_instructions}));
@@ -209,6 +211,25 @@ export default function SorteosAdmin(){
   else{if(!form.id||form.status==='draft')setForm(f=>({...f,terms:sharedTerms.trim(),free_instructions:sharedFree.trim()}));setNotice('Bases generales guardadas. Las próximas ediciones reutilizarán este texto. Las bases de las ediciones publicadas se conservan.');}
   setBusy(false);
  }
+ async function uploadHeroImage(file:File|undefined){
+  if(!db||!file||heroBusy)return;
+  if(file.type!=='image/png'||file.size>6*1024*1024){setError('Elegí el PNG transparente de hasta 6 MB.');return;}
+  setHeroBusy(true);setError('');setNotice('');
+  try{
+   // Preserve old art until both storage and settings succeed.
+   const path='portada/mitobicel-sorteos-'+crypto.randomUUID()+'.png';
+   const {error:uploadError}=await db.storage.from('raffle-prizes').upload(path,file,{contentType:'image/png',cacheControl:'3600',upsert:false});
+   if(uploadError)throw uploadError;
+   const url=db.storage.from('raffle-prizes').getPublicUrl(path).data.publicUrl;
+   const {error:saveError}=await db.from('raffle_settings').update({hero_image_url:url}).eq('id',1);
+   if(saveError)throw saveError;
+   setHeroImageUrl(url);
+   setNotice('Imagen de portada publicada: ya aparece en el inicio de Sorteos. No tenés que modificar el QR.');
+  }catch(err){
+   const message=err&&typeof err==='object'&&'message' in err?String(err.message):'Error desconocido';
+   setError('No se pudo subir la portada. '+message+' Comprobá la migración SQL y el bucket raffle-prizes.');
+  }finally{setHeroBusy(false);}
+ }
  async function uploadPrize(file:File|undefined){
   if(!db||!form.id||!file||photoBusy)return;
   if(file.type!=='image/png'||file.size>5*1024*1024){setError('Seleccioná un PNG de máximo 5 MB.');return;}
@@ -252,6 +273,16 @@ export default function SorteosAdmin(){
      <button onClick={()=>{setForm({...fresh(),terms:sharedTerms,free_instructions:sharedFree});setCodes([]);setEntries([]);setWinners([]);setNotice('Creá una nueva edición y guardala.');}}>+ Nueva edición</button>
     </nav>
     <div className="raffle-admin-kpis"><div><strong>{campaigns.length}</strong><span>Ediciones</span></div><div><strong>{codes.length}</strong><span>Códigos de compra (máx. 1000 visibles)</span></div><div><strong>{entries.length}</strong><span>Participaciones (máx. 2000 visibles)</span></div><div><strong>{winners.length}</strong><span>Ganadores de esta edición</span></div></div>
+    <div className="raffle-admin-panel">
+     <h2>Imagen de portada · Sorteos</h2>
+     <p>Acá va la composición de premios con el logo MITOBICEL, en el cuadro visual junto a «Tu esfuerzo merece algo grande». Usá un PNG sin fondo; la imagen se ajusta al tamaño de pantalla y se mantiene para todas las ediciones.</p>
+     <div className="raffle-admin-hero-upload">
+      {heroImageUrl?<img src={heroImageUrl} alt="Imagen de portada actualmente publicada"/>:<div className="raffle-admin-hero-placeholder">Portada por cargar</div>}
+      <div><label>Elegir imagen PNG de portada<input type="file" accept="image/png" disabled={heroBusy} onChange={e=>{void uploadHeroImage(e.target.files?.[0]);e.currentTarget.value='';}}/></label>
+      <small>PNG transparente · hasta 6 MB · todos los celulares</small>
+      {heroBusy&&<span>Subiendo portada…</span>}</div>
+     </div>
+    </div>
     <div className="raffle-admin-panel">
      <h2>QR general único · MITOBICEL Sorteos</h2>
      <p>Imprimí este mismo QR y dejalo visible en MITOBICEL 1. Siempre apunta a <strong>/sorteos</strong>, no cambia entre compras ni entre meses. Cada compra validada utiliza un código de un solo uso, separado del QR.</p>
