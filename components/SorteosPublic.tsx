@@ -68,7 +68,7 @@ export default function SorteosPublic(){
    setReady(true);
   };
   void load();
-  const watch=window.setInterval(()=>setNow(Date.now()),30000);
+  const watch=window.setInterval(()=>{setNow(Date.now());void load();},60000);
   return()=>{live=false;window.clearInterval(watch);};
  },[]);
  const open=Boolean(campaign&&campaign.status==='live'&&now>=new Date(campaign.starts_at).getTime()&&now<=new Date(campaign.ends_at).getTime()&&campaign.prizes.length&&campaign.terms.length>=80);
