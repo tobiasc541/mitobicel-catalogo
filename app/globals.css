@@ -976,3 +976,15 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .raffle-admin-staff-link input{width:100%;min-width:0;border:1px solid #b8d5c2;border-radius:9px;padding:10px;font-size:12px;color:#12391d;background:white}
 .raffle-admin-staff-link button{min-height:42px;border:1px solid #21683d;border-radius:10px;background:#0c6030;color:white;font-size:12px;font-weight:800;padding:8px 15px}
 .raffle-staff-info{font-size:11px!important;color:#6d8275!important;line-height:1.5!important;margin:5px 0 0!important}
+
+/* Página /sorteos/agradecimiento — mismo diseño y assets, mensaje de gratitud. */
+.raffle-faith-note{max-width:600px;margin:23px 0 18px;padding:21px 23px;border:1px solid #b7dcc7;border-radius:16px;background:linear-gradient(120deg,#e8f7ec 0%,#f5fbf3 100%);box-shadow:0 10px 24px #0845280a}
+.raffle-faith-note strong{font-size:15px;font-weight:900;color:#135c36;letter-spacing:-.025em}
+.raffle-faith-note p{font-size:13px;line-height:1.85;margin:8px 0 0;color:#315842}
+.raffle-faith-banner{max-width:1000px;width:calc(100% - 34px);margin:35px auto 68px;padding:clamp(26px,4.5vw,54px);border:1px solid #d1e3d6;border-radius:24px;background:#fff;text-align:center;box-shadow:0 14px 40px #092d1809}
+.raffle-faith-banner .raffle-eyebrow{margin-bottom:12px}
+.raffle-faith-banner h2{font-size:clamp(27px,4vw,46px);font-weight:900;line-height:1.14;letter-spacing:-.055em;margin:0 auto 23px;max-width:780px}
+.raffle-faith-banner h2 em{color:#d7081b;font-style:normal}
+.raffle-faith-banner p{max-width:770px;margin:0 auto 13px;color:#526d5b;font-size:14px;line-height:1.9}
+.raffle-faith-banner p strong{color:#145935}
+@media (max-width:700px){.raffle-faith-note{margin:18px 0 15px;padding:17px}.raffle-faith-note p{font-size:12px}.raffle-faith-banner{margin:25px auto 45px;padding:27px 20px}.raffle-faith-banner p{font-size:13px}}
