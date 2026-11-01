@@ -282,7 +282,7 @@ export default function SorteosAdmin(){
  }
  const canManage=Boolean(form.id);
  return <div className="raffle-admin">
-  <header className="raffle-admin-header"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><span className="raffle-eyebrow">SOLO PERSONAL AUTORIZADO</span><strong>Centro de Control · Sorteos</strong></div><a href="/sorteos" target="_blank" rel="noopener noreferrer">Ver página pública ↗</a></header>
+  <header className="raffle-admin-header"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><span className="raffle-eyebrow">SOLO PERSONAL AUTORIZADO</span><strong>Centro de Control · Sorteos Vendedores</strong></div><a href="/sorteos" target="_blank" rel="noopener noreferrer">Ver página pública ↗</a></header>
   <section className="raffle-admin-main">
    <div className="raffle-admin-banner"><span className="raffle-eyebrow">GESTIÓN DE SORTEOS</span><h1>Volvimos. Y volvimos con todo.</h1><p>Administrá los sorteos de agradecimiento para buscas, papeleras y distribuidores. Comercio autorizado: MITOBICEL 1, Temperley, a una cuadra de la estación. Los catálogos siguen independientes.</p></div>
    {checking?<p>Verificando permisos…</p>:!authorized?<form className="raffle-admin-panel raffle-login" onSubmit={e=>void login(e)}>
@@ -292,7 +292,7 @@ export default function SorteosAdmin(){
     <button className="raffle-cta" disabled={busy} type="submit">Ingresar al Centro de Sorteos ↗</button>
    </form>:<>
     <nav className="raffle-admin-nav" aria-label="Apartados del superadmin">
-     <a href="/admin">Catálogo 1</a><a href="/admin/catalogo-2">Catálogo 2</a><a className="active" href="/admin/sorteos">Sorteos · MITOBICEL</a>
+     <a href="/admin">Catálogo 1</a><a href="/admin/catalogo-2">Catálogo 2</a><a className="active" href="/admin/sorteos">Sorteos · Vendedores</a><a href="/admin/sorteos/compradores">Sorteos · Consumidor final</a>
      <button onClick={()=>{setForm({...fresh(),terms:sharedTerms,free_instructions:sharedFree});setCodes([]);setEntries([]);setWinners([]);setNotice('Creá una nueva edición y guardala.');}}>+ Nueva edición</button>
     </nav>
     <div className="raffle-admin-kpis"><div><strong>{campaigns.length}</strong><span>Ediciones</span></div><div><strong>{codes.length}</strong><span>Códigos de compra (máx. 1000 visibles)</span></div><div><strong>{entries.length}</strong><span>Participaciones (máx. 2000 visibles)</span></div><div><strong>{winners.length}</strong><span>Ganadores de esta edición</span></div></div>

@@ -4,10 +4,10 @@ import {getDb} from '@/lib/client';
 import {Icon} from '@/components/Visuals';
 
 type Campaign={
- id:string;period:string;title:string;subtitle:string;store_name:string;
+ id:string;period:string;title:string;subtitle:string;hero_image_url:string;
  prizes:string[];starts_at:string;ends_at:string;draw_at:string;status:string;
  results_published:boolean;terms:string;video_url:string;video_title:string;
- free_instructions:string;prize_image_url?:string;
+ prize_image_url?:string;
 };
 type Winner={prize:string;winner_label:string;dni_mask:string;drawn_at:string;delivered:boolean;delivery_video_url:string;delivery_photo_url:string};
 type Delivery={period:string;prize:string;delivered_at:string;video_url:string;photo_url:string};
@@ -43,9 +43,9 @@ function registrationError(err:unknown):string{
  const e=err&&typeof err==='object'?err as {message?:string;code?:string;hint?:string}:null;
  const message=e?.message||'No se pudo completar el registro.';
  if(e?.code==='PGRST202'||/could not find the function/i.test(message))
-  return 'La función de inscripción necesita actualizarse. Avisá al personal de MITOBICEL 1 para que revise la configuración.';
+  return 'El sistema de inscripción para consumidores todavía no está activado en Supabase. Avisá a MITOBICEL.';
  if(e?.code==='42501')return 'La inscripción está bloqueada por permisos de la base de datos. Avisá al comercio.';
- if(e?.code==='23514')return 'El formato del código no coincide con el permitido. Solicitá un código nuevo en MITOBICEL 1.';
+ if(e?.code==='23514')return 'No pudimos procesar los datos. Revisá el formulario o consultá con MITOBICEL.';
  return message.length>220?message.slice(0,220)+'…':message;
 }
 function Video({url,title}:{url:string;title:string}){
@@ -64,32 +64,30 @@ export default function SorteosAgradecimiento(){
  const [deliveries,setDeliveries]=useState<Delivery[]>([]);
  const [ready,setReady]=useState(false),[problem,setProblem]=useState('');
  const [firstName,setFirstName]=useState(''),[lastName,setLastName]=useState('');
- const [dni,setDni]=useState(''),[phone,setPhone]=useState(''),[code,setCode]=useState('');
+ const [dni,setDni]=useState(''),[phone,setPhone]=useState('');
  const [accept,setAccept]=useState(false);
  const [sending,setSending]=useState(false),[receipt,setReceipt]=useState('');
  const [now,setNow]=useState(Date.now());
  const [selectedExample,setSelectedExample]=useState<number|null>(null);
  const [heroImageUrl,setHeroImageUrl]=useState('');
  useEffect(()=>{
-  const codeFromUrl=new URLSearchParams(window.location.search).get('codigo');
-  // Accept already printed legacy URLs, but the new QR is always /sorteos.
-  if(codeFromUrl)setCode(codeFromUrl.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40));
   let live=true;
   const load=async()=>{
    const db=getDb();
    if(!db){if(live){setProblem('El sistema de inscripción está en preparación.');setReady(true);}return;}
-   const {data,error}=await db.from('raffle_campaigns').select('*').in('status',['live','closed']).order('period',{ascending:false}).limit(5);
+   const {data,error}=await db.from('raffle_consumer_campaigns').select('*').in('status',['live','closed']).order('period',{ascending:false}).limit(5);
    if(!live)return;
    if(error){setProblem('La plataforma de sorteos todavía no está configurada.');setReady(true);return;}
    const hero=await db.rpc('raffle_public_hero_image');
    if(live&&!hero.error)setHeroImageUrl(typeof hero.data==='string'?hero.data:'');
-   const archive=await db.rpc('raffle_public_deliveries');
+   const archive=await db.rpc('raffle_consumer_public_deliveries');
    if(live&&!archive.error)setDeliveries((archive.data||[]) as Delivery[]);
    const rows=(data||[]) as Campaign[];
    const current=rows.find(x=>x.status==='live'&&Date.now()<=new Date(x.draw_at).getTime())||rows[0]||null;
    setCampaign(current);
+   if(live&&!current)setProblem('La próxima edición para consumidores está en preparación.');
    if(current?.results_published){
-    const result=await db.rpc('raffle_public_winners',{p_campaign_id:current.id});
+    const result=await db.rpc('raffle_consumer_public_winners',{p_campaign_id:current.id});
     if(live&&!result.error)setWinners(result.data as Winner[]||[]);
    }
    setReady(true);
@@ -108,23 +106,19 @@ export default function SorteosAgradecimiento(){
   if(!/^\d{7,9}$/.test(doc)){setProblem('Ingresá un DNI válido de 7 a 9 números.');return;}
   if(tel.length<8){setProblem('Ingresá tu teléfono con código de área.');return;}
   if(!accept){setProblem('Aceptá las bases y condiciones de la edición.');return;}
-  const token=code.trim().toUpperCase();
-  if(!(/^\d{4}$/.test(token)||/^[A-Z0-9]{20,40}$/.test(token))){
-   setProblem('El código nuevo tiene cuatro números. Usá el que te entregaron en el local.');return;
-  }
   const db=getDb();if(!db){setProblem('No se pudo conectar con la inscripción.');return;}
   setSending(true);
   try{
-   const {data,error}=await db.rpc('raffle_register',{
-    p_campaign_id:campaign.id,p_code:token,
+   const {data,error}=await db.rpc('raffle_consumer_register',{
+    p_campaign_id:campaign.id,
     p_first_name:first,p_last_name:last,p_dni:doc,
-    p_phone:tel,p_free:false,p_accept:accept
+    p_phone:tel,p_accept:accept
    });
    if(error)throw error;
    const result=String(data||'');
    if(result.startsWith('DENEGADO:')){setProblem(result.slice(9).trim());return;}
    if(!result)throw new Error('No recibimos confirmación de la base. Comprobá tu inscripción con el comercio.');
-   setReceipt(result);setCode('');setAccept(false);
+   setReceipt(result);setAccept(false);
   }catch(err){setProblem(registrationError(err));}
   finally{setSending(false);}
  }
@@ -139,11 +133,11 @@ export default function SorteosAgradecimiento(){
     <p>Con tu apoyo, nuestra fábrica puede seguir creciendo. Pero también ayudás a que un vendedor tenga trabajo, sostenga a su familia y lleve un plato de comida a su casa. <strong>Detrás de cada producto hay personas, esfuerzo e historias reales.</strong></p>
     <div className="raffle-faith-note"><strong>Una bendición para tu hogar</strong><p>Desde nuestra fe le pedimos a Dios que bendiga tu vida y a tu familia. Jesús nos enseñó con su ejemplo a ser bondadosos y generosos: no se trata de guardarnos todo, sino de compartir lo que recibimos y hacer el bien. Por eso queremos transformar nuestro agradecimiento en algo que también llegue a vos.</p></div>
     <div className="raffle-hero-actions"><a href="#participar" className="raffle-cta">Participar del sorteo <span>↗</span></a><a href="#resultados" className="raffle-cta-secondary">Ver resultados</a></div>
-    <div className="raffle-hero-info"><span><Icon name="award"/> Cada compra ayuda a crecer y a dar trabajo</span><span><Icon name="package"/> Recordá pedir el QR oficial de sorteos</span></div>
+    <div className="raffle-hero-info"><span><Icon name="award"/> Cada producto tiene su QR de sorteos</span><span><Icon name="package"/> Escaneá el QR y registrate directamente</span></div>
    </div>
    <div className="raffle-hero-art raffle-gifts-hero">
-    {heroImageUrl?
-     <img className="raffle-hero-art-uploaded" src={heroImageUrl} alt="MITOBICEL Sorteos: collage de premios posibles y agradecimiento a todos nuestros clientes"/>:
+    {campaign?.hero_image_url||heroImageUrl?
+     <img className="raffle-hero-art-uploaded" src={campaign?.hero_image_url||heroImageUrl} alt="MITOBICEL Sorteos: collage de premios posibles y agradecimiento a todos nuestros clientes"/>:
      <>
     <img className="raffle-gifts-logo" src="/logo-mitobicel.png" alt="MITOBICEL"/>
     <span className="raffle-gifts-ribbon">UN AGRADECIMIENTO A TU CONFIANZA</span>
@@ -169,30 +163,29 @@ export default function SorteosAgradecimiento(){
   <div className="raffle-mini-thanks" role="note"><span className="raffle-mini-thanks-heart"><Icon name="heart"/></span><p><strong>Tu compra también es una oportunidad para otro:</strong> el vendedor que trabaja en la calle, la papelera de tu barrio, la distribuidora y cada familia que vive de este trabajo. <strong>Gracias por ayudarnos a crecer juntos.</strong></p></div>
   <section className="raffle-faith-banner" aria-labelledby="raffle-faith-heading"><span className="raffle-eyebrow">DAR TAMBIÉN ES RECIBIR</span><h2 id="raffle-faith-heading">El ejemplo de Jesús: <em>compartir con amor.</em></h2><p>Creemos que el éxito no tiene sentido si queda solo en nuestras manos. Jesús nos mostró que la verdadera grandeza está en servir, ser generosos y mirar al que tenemos al lado. Por eso esta iniciativa nace de la gratitud: queremos hacer el bien con lo que Dios nos permite construir.</p><p><strong>Que Dios bendiga cada hogar, cada vendedor y cada persona que confía en MITOBICEL.</strong></p></section>
   <section className="raffle-section raffle-how" id="como-participar">
-   <span className="raffle-eyebrow">TU COMPRA, UN QR Y UNA OPORTUNIDAD</span><h2>Elegís MITOBICEL. <em>Nosotros te damos las gracias.</em></h2>
-   <p className="raffle-how-intro">Cada vez que comprás productos MITOBICEL, recordá consultar por el QR oficial y los sorteos mensuales. Cuando el punto de venta está adherido, así funciona:</p>
+   <span className="raffle-eyebrow">UN QR EN CADA PRODUCTO</span><h2>Elegís MITOBICEL. <em>Nosotros te damos las gracias.</em></h2>
+   <p className="raffle-how-intro">Todos los productos MITOBICEL incluyen un QR. Escanealo con tu celular para ingresar directamente a esta página de sorteos mensuales para consumidores, sin pedir códigos ni hablar con el vendedor.</p>
    <div className="raffle-steps">
-    <article><span>01</span><h3>Buscá el QR oficial</h3><p>Cuando comprás un producto MITOBICEL, pedí el QR de nuestros sorteos mensuales en el comercio adherido. Escanealo desde tu celular para acceder a la inscripción.</p></article>
-    <article><span>02</span><h3>Recibí tus cuatro números</h3><p>El personal verifica la compra y te entrega un código de cuatro dígitos. Ingresá ese código en la web y completá vos tus datos. Cada código se utiliza una sola vez.</p></article>
-    <article><span>03</span><h3>Compartí la alegría</h3><p>Seguí las fechas, los ganadores y las entregas mensuales. Nuestro deseo es que cada premio llegue con alegría y bendición a una familia.</p></article>
+    <article><span>01</span><h3>Escaneá el QR del producto</h3><p>Encontrá el QR en tu producto MITOBICEL y escanealo con tu celular. El enlace te lleva a esta página para consumidores.</p></article>
+    <article><span>02</span><h3>Registrate directamente</h3><p>Completá tu nombre, apellido, DNI y teléfono. No tenés que pedirle ningún número al vendedor.</p></article>
+    <article><span>03</span><h3>Seguí los resultados</h3><p>Conocé las fechas, los premios y las entregas de cada mes. Se permite una inscripción por DNI en cada edición.</p></article>
    </div>
-   <div className="raffle-authorized-shop"><Icon name="map-pin"/><div><strong>Punto de validación actualmente habilitado: MITOBICEL 1</strong><p>Temperley, Zona Sur, Buenos Aires · A una cuadra de la estación. Consultá si tu comercio participa antes de solicitar un código.</p></div></div>
+   <div className="raffle-authorized-shop"><Icon name="package"/><div><strong>El acceso está en el producto, no en el mostrador</strong><p>Escaneá el QR de MITOBICEL y completá el formulario de este sorteo para consumidores, independiente de los sorteos para vendedores.</p></div></div>
   </section>
   <section className="raffle-section raffle-register-section" id="participar">
    <div className="raffle-register-intro">
     <span className="raffle-eyebrow">PARA QUIENES ELIGEN NUESTROS PRODUCTOS</span>
     <h2>Gracias por estar. <em>Participá del sorteo.</em></h2>
-    <p>Esta es una pequeña manera de agradecerte por confiar en nuestros productos. Si recibiste un código del comercio adherido, completá tus datos para registrarte en la edición vigente. Si ganás, verificaremos tu identidad antes de entregar el premio.</p>
-    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · '+(campaign.store_name.trim().toLowerCase()==='temper'?'MITOBICEL 1':campaign.store_name):'Consultá esta página para próximos anuncios'}</small>
+    <p>Este sorteo es para quienes eligen nuestros productos. Al escanear el QR de MITOBICEL podés registrarte directamente, sin códigos de compra. Una inscripción por DNI en cada edición mensual. Si ganás, verificaremos tu identidad antes de entregar el premio.</p>
+    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · Consumidores:'Consultá esta página para próximos anuncios'}</small>
      {campaign&&<small>Inscripciones: {date(campaign.starts_at)} hasta {date(campaign.ends_at)}.</small>}</div>
    </div>
    <div className="raffle-register-card">
-    <span className="raffle-eyebrow">TU CÓDIGO DE AGRADECIMIENTO</span>
+    <span className="raffle-eyebrow">REGISTRO DIRECTO · SIN CÓDIGOS</span>
     <h3>{open?'¡Inscripciones abiertas!':'Tu participación, cuando se anuncie la edición.'}</h3>
-    {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Próxima edición en preparación</strong><p>Cuando MITOBICEL publique las fechas, las bases y los premios confirmados, vas a poder registrarte acá. Todavía no estamos recibiendo datos personales.</p></div>:
+    {!ready?<p>Cargando información de la edición…</p>:!open?<div className="raffle-not-open"><Icon name="award"/><strong>Próxima edición en preparación</strong><p>La próxima edición de sorteos para consumidores todavía no está abierta. Cuando se anuncien las fechas, vas a poder completar tu inscripción desde esta página.</p></div>:
     <form onSubmit={e=>void submit(e)}>
-     <p className="raffle-free-instructions"><strong>¿Compraste un producto MITOBICEL?</strong> En los puntos adheridos, podés escanear el QR oficial y recibir un código de cuatro números por tu compra validada. El personal no necesita anotar tu DNI para emitirlo: lo completás vos en este formulario. Consultá las bases de la edición para conocer las condiciones de participación.</p>
-     <label className="raffle-field">Código de cuatro números que recibiste<input inputMode="numeric" value={code} onChange={e=>setCode(e.target.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,40))} autoComplete="one-time-code" required placeholder="Ejemplo: 0427"/></label>
+     <p className="raffle-free-instructions"><strong>¡Gracias por elegir MITOBICEL!</strong> Escaneaste el QR del producto y ya estás en la página correcta. Completá tus datos para inscribirte. No hace falta código adicional ni verificación manual.</p>
      <div className="raffle-fields-two">
       <label className="raffle-field">Nombre<input value={firstName} onChange={e=>setFirstName(e.target.value.slice(0,80))} required minLength={2} autoComplete="given-name" maxLength={80} placeholder="Tu nombre completo"/></label>
       <label className="raffle-field">Apellido<input value={lastName} onChange={e=>setLastName(e.target.value.slice(0,80))} required minLength={2} autoComplete="family-name" maxLength={80} placeholder="Tu apellido completo"/></label>
@@ -223,6 +216,6 @@ export default function SorteosAgradecimiento(){
    </div>}
   </section>
   {campaign?.terms&&<section className="raffle-section raffle-terms" id="bases"><details><summary>Bases y condiciones de la edición {campaign.period}</summary><p>{campaign.terms}</p></details></section>}
-  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Gracias a cada persona que nos elige</strong><p>Que Dios bendiga a tu familia. Gracias por acompañar a nuestros vendedores, comercios y a nuestra fábrica. Punto de validación: MITOBICEL 1, Temperley. Fábrica: Av. San Martín 249, Burzaco.</p><small>© {new Date().getFullYear()} · Sorteos mensuales sujetos a las bases y condiciones de cada edición.</small></div></footer>
+  <footer className="raffle-footer"><img src="/logo-mitobicel.png" alt="MITOBICEL"/><div><strong>MITOBICEL · Gracias a cada persona que nos elige</strong><p>Que Dios bendiga a tu familia. Gracias por acompañar a nuestros vendedores, comercios y a nuestra fábrica. Fábrica: Av. San Martín 249, Burzaco.</p><small>© {new Date().getFullYear()} · Sorteos de consumidores independientes de los sorteos de vendedores, sujetos a las bases de cada edición.</small></div></footer>
  </main>;
 }

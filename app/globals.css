@@ -988,3 +988,16 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .raffle-faith-banner p{max-width:770px;margin:0 auto 13px;color:#526d5b;font-size:14px;line-height:1.9}
 .raffle-faith-banner p strong{color:#145935}
 @media (max-width:700px){.raffle-faith-note{margin:18px 0 15px;padding:17px}.raffle-faith-note p{font-size:12px}.raffle-faith-banner{margin:25px auto 45px;padding:27px 20px}.raffle-faith-banner p{font-size:13px}}
+
+/* Ediciones y resultados independientes de sorteos para consumidores */
+.raffle-consumer-image-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.raffle-consumer-image-grid>div{display:flex;flex-direction:column;gap:12px;border:1px solid #dce9df;border-radius:15px;padding:18px;background:#f7fbf8}
+.raffle-consumer-image-grid img{height:160px;max-width:100%;object-fit:contain;border-radius:12px}
+.raffle-consumer-image-grid label{font-size:12px;font-weight:800}
+.raffle-consumer-image-grid input{display:block;max-width:100%;margin-top:8px}
+.raffle-consumer-winners-admin{display:grid;gap:14px;margin-top:20px}
+.raffle-consumer-winners-admin article{background:#f3faf5;border:1px solid #cfe7d4;border-radius:14px;padding:18px;display:grid;gap:10px}
+.raffle-consumer-winners-admin article p{margin:0;font-size:12px}
+.raffle-consumer-winners-admin article label{display:grid;gap:5px;font-size:12px;font-weight:800}
+.raffle-consumer-winners-admin article input{max-width:100%;border:1px solid #cee3d1;border-radius:10px;padding:12px}
+@media(max-width:700px){.raffle-consumer-image-grid{grid-template-columns:1fr}}
