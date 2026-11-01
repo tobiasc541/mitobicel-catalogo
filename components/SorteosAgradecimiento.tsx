@@ -177,7 +177,7 @@ export default function SorteosAgradecimiento(){
     <span className="raffle-eyebrow">PARA QUIENES ELIGEN NUESTROS PRODUCTOS</span>
     <h2>Gracias por estar. <em>Participá del sorteo.</em></h2>
     <p>Este sorteo es para quienes eligen nuestros productos. Al escanear el QR de MITOBICEL podés registrarte directamente, sin códigos de compra. Una inscripción por DNI en cada edición mensual. Si ganás, verificaremos tu identidad antes de entregar el premio.</p>
-    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · Consumidores:'Consultá esta página para próximos anuncios'}</small>
+    <div className="raffle-date-box"><span>PRÓXIMA FECHA OFICIAL</span><strong>{campaign?.draw_at?date(campaign.draw_at):'A confirmar por MITOBICEL'}</strong><small>{campaign?'Edición '+campaign.period+' · Consumidores':'Consultá esta página para próximos anuncios'}</small>
      {campaign&&<small>Inscripciones: {date(campaign.starts_at)} hasta {date(campaign.ends_at)}.</small>}</div>
    </div>
    <div className="raffle-register-card">
