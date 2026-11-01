@@ -169,7 +169,7 @@ grant execute on function public.raffle_staff_issue_code(text,text) to anon,auth
 
 -- Admin retains one-click issuance from the superadministrator (no employee DNI).
 create or replace function public.raffle_issue_purchase_code(p_campaign_id uuid)
-returns text language plpgsql security definer set search_path='' as $
+returns text language plpgsql security definer set search_path='' as $$
 declare v_user uuid:=(select auth.uid());v_code text;v_id uuid;v_attempt integer;
 begin
  if v_user is null or not exists(
@@ -193,7 +193,7 @@ begin
  end loop;
  raise exception 'No quedan códigos disponibles.';
 end;
-$;
+$$;
 revoke all on function public.raffle_issue_purchase_code(uuid) from public,anon,authenticated;
 grant execute on function public.raffle_issue_purchase_code(uuid) to authenticated;
 
