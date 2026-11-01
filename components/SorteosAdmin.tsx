@@ -65,7 +65,8 @@ export default function SorteosAdmin(){
  const [form,setForm]=useState<Editor>(fresh);
  const [codes,setCodes]=useState<Code[]>([]),[entries,setEntries]=useState<Entry[]>([]),[winners,setWinners]=useState<Winner[]>([]);
  const [drawPrize,setDrawPrize]=useState('');
- const [operatorEmail,setOperatorEmail]=useState(''),[operatorBusy,setOperatorBusy]=useState(false);
+ const [staffLink,setStaffLink]=useState('');
+ const [staffLinkBusy,setStaffLinkBusy]=useState(false);
  const [printed,setPrinted]=useState<Code[]>([]);
  const [qrImage,setQrImage]=useState('');
  const [sharedTerms,setSharedTerms]=useState('');
@@ -160,22 +161,29 @@ export default function SorteosAdmin(){
   if(saveError){setError(saveError.message);}else{setNotice(activate?'Edición publicada. Las inscripciones están disponibles dentro del período configurado.':'Edición guardada correctamente.');await load(data.id);}
   setBusy(false);
  }
- async function manageOperator(enable:boolean){
-  if(!db||!operatorEmail.trim()||operatorBusy)return;
-  setOperatorBusy(true);setError('');setNotice('');
+ async function manageStaffLink(revoke:boolean){
+  if(!db||staffLinkBusy)return;
+  if(revoke&&!window.confirm('¿Revocar el enlace privado actual? Los empleados dejarán de poder generar nuevos códigos.'))return;
+  setStaffLinkBusy(true);setError('');setNotice('');
   try{
-   const {data,error:e}=await db.rpc('raffle_code_operator_manage',{
-    p_email:operatorEmail.trim(),p_enable:enable
-   });
+   const {data,error:e}=await db.rpc(revoke?'raffle_staff_link_revoke':'raffle_staff_link_create');
    if(e)throw e;
-   setNotice(String(data||'Permisos actualizados correctamente.'));
-   setOperatorEmail('');
+   if(revoke){
+    setStaffLink('');
+    setNotice('El enlace anterior quedó revocado. Ya no puede emitir códigos.');
+   }else{
+    const token=String(data||'');
+    if(!/^[0-9a-f]{64}$/.test(token))throw new Error('La base no devolvió un enlace válido.');
+    const link=window.location.origin+'/sorteos/personal#clave='+token;
+    setStaffLink(link);
+    setNotice('Enlace privado creado. Copialo y compartilo únicamente con el personal autorizado. Los anteriores quedaron revocados.');
+   }
   }catch(err){
    const e=err as {code?:string;message?:string};
    setError(e?.code==='PGRST202'?
-    'Falta la nueva función de personal en Supabase. Aplicá la actualización de códigos sin DNI.':
-    (e?.message||'No se pudieron cambiar los permisos.'));
-  }finally{setOperatorBusy(false);}
+    'Falta instalar supabase/sorteos_enlace_privado_dni.sql en la base de MITOBICEL.':
+    (e?.message||'No se pudo administrar el enlace.'));
+  }finally{setStaffLinkBusy(false);}
  }
  async function generate(){
   if(!db||!form.id||busy)return;
@@ -354,19 +362,27 @@ export default function SorteosAdmin(){
       <button type="button" className="raffle-cta" disabled={!canManage||busy} onClick={()=>void generate()}>Generar código de 4 números</button>
       <button type="button" disabled={!codes.length} onClick={exportCodes}>Descargar comprobantes CSV</button>
       <button type="button" disabled={!codes.length&&!printed.length} onClick={()=>void printQr()}>Imprimir comprobante</button>
-      <a className="raffle-cta-secondary" href="/sorteos/personal" target="_blank" rel="noopener noreferrer">Abrir panel del empleado ↗</a>
+      <span>El enlace completo se genera en el apartado de acceso de personal, debajo.</span>
      </div>
      <p className="raffle-admin-hint">El empleado no necesita entrar a este superadministrador: tiene una pantalla exclusiva, sin acceso a participantes, premios ni configuraciones.</p>
      {codes.length>0&&<div className="raffle-admin-codes">{codes.slice(0,12).map(c=><div key={c.id}><code>{c.code}</code><small>{c.used_at?'Utilizado':'Disponible'}{c.buyer_dni?' · DNI antiguo terminado en '+c.buyer_dni.slice(-3):''}</small></div>)}</div>}
     </div>
     <div className="raffle-admin-panel">
-     <h2>Acceso del empleado · Solo generar códigos</h2>
-     <p>El empleado crea y confirma su cuenta en <a href="/sorteos/personal" target="_blank" rel="noopener noreferrer">el panel de personal</a> con su propio correo y contraseña. Escribí ese correo para darle o quitarle permiso. Nunca tendrá acceso al superadministrador.</p>
+     <h2>Enlace privado de personal · Sin usuario ni contraseña</h2>
+     <p>Creá una sola vez el enlace que compartirás con el empleado. Cuando lo abra, solo ingresará su DNI y podrá generar códigos de cuatro números. No hay cuentas ni habilitaciones individuales.</p>
      <div className="raffle-admin-qr-actions">
-      <label>Correo del empleado<input type="email" placeholder="empleado@ejemplo.com" value={operatorEmail} onChange={e=>setOperatorEmail(e.target.value)} autoComplete="off"/></label>
-      <button type="button" disabled={!operatorEmail.trim()||operatorBusy} onClick={()=>void manageOperator(true)}>Habilitar empleado</button>
-      <button type="button" disabled={!operatorEmail.trim()||operatorBusy} onClick={()=>void manageOperator(false)}>Revocar acceso</button>
+      <button type="button" disabled={staffLinkBusy} onClick={()=>void manageStaffLink(false)}>
+       {staffLinkBusy?'Procesando…':'Crear / renovar enlace privado'}
+      </button>
+      <button type="button" disabled={staffLinkBusy} onClick={()=>void manageStaffLink(true)}>Revocar enlace</button>
      </div>
+     {staffLink&&<div className="raffle-admin-staff-link">
+      <label>Enlace de personal (se muestra solo al crearlo)
+       <input type="text" value={staffLink} readOnly onFocus={e=>e.currentTarget.select()}/>
+      </label>
+      <button type="button" onClick={()=>void navigator.clipboard.writeText(staffLink)}>Copiar enlace privado</button>
+     </div>}
+     <p className="raffle-admin-hint">El enlace incluye una clave secreta larga. Quien lo tenga podrá emitir códigos; el DNI es solo un identificador declarado, no una autenticación. Si se comparte por error, renovalo: el enlace anterior se invalida. Vence automáticamente a los 90 días.</p>
     </div>
     <div className="raffle-admin-panel"><h2>Participantes de esta edición</h2><p>Los DNI completos son información privada y solo se visualizan acá para verificar a la persona al entregar un premio.</p>
      {entries.length?<div className="raffle-admin-list">{entries.slice(0,200).map(e=><div key={e.id}><strong>{e.first_name} {e.last_name}</strong><span>DNI {e.dni} · {e.phone}</span><small>{e.entry_type==='free'?'Vía gratuita':'QR de comercio'} · {new Date(e.created_at).toLocaleDateString('es-AR')}</small></div>)}</div>:<p>Todavía no hay participaciones registradas.</p>}

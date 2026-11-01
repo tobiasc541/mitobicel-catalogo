@@ -969,3 +969,10 @@ h1 em,h2 em,h3 em,.offer-section h2 em,.vsl-intro h2 em,.buy-card h2 em,.assuran
 .raffle-staff-notice{color:#135a2d;background:#e8f6ed;border:1px solid #bfe2cd}
 .raffle-staff-footer{text-align:center;color:#668171;font-size:11px;line-height:1.5;margin-top:22px}
 @media(max-width:480px){.raffle-staff-page{padding:22px 12px}.raffle-staff-header img{width:70px}.raffle-staff-header h1{font-size:26px}.raffle-staff-code{letter-spacing:.06em}}
+
+/* Sortes: enlace privado para personal sin cuentas individuales */
+.raffle-admin-staff-link{margin-top:18px;padding:18px;border-radius:14px;background:#eef8f0;border:1px solid #c9e9d3;display:flex;flex-wrap:wrap;align-items:end;gap:12px}
+.raffle-admin-staff-link label{display:flex;flex:1;flex-direction:column;gap:8px;font-size:12px;font-weight:800;min-width:200px;overflow:hidden}
+.raffle-admin-staff-link input{width:100%;min-width:0;border:1px solid #b8d5c2;border-radius:9px;padding:10px;font-size:12px;color:#12391d;background:white}
+.raffle-admin-staff-link button{min-height:42px;border:1px solid #21683d;border-radius:10px;background:#0c6030;color:white;font-size:12px;font-weight:800;padding:8px 15px}
+.raffle-staff-info{font-size:11px!important;color:#6d8275!important;line-height:1.5!important;margin:5px 0 0!important}
